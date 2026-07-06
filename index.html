@@ -1,0 +1,896 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Brújula — 3 destinos para ti</title>
+<meta name="theme-color" content="#085041">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icono.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icono.svg">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --verde-950:#04342C; --verde-800:#085041; --verde-600:#0F6E56; --verde-200:#9FE1CB; --verde-50:#E1F5EE;
+    --coral-600:#993C1D; --coral-500:#D85A30; --coral-50:#FAECE7;
+    --papel:#FAF9F5; --tinta:#1F2422; --tinta-2:#5C6660; --tinta-3:#98A29B;
+    --carta:#FFFFFF; --borde:#E8E6DE; --radio:24px;
+    --serif:'Fraunces',Georgia,serif; --sans:'Inter',system-ui,sans-serif;
+    --sombra:0 1px 2px rgba(4,52,44,.04),0 12px 32px -12px rgba(4,52,44,.14);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{-webkit-text-size-adjust:100%}
+  body{font-family:var(--sans);background:var(--papel);color:var(--tinta);font-size:15px;line-height:1.55;
+       max-width:390px;margin:0 auto;min-height:100vh;padding-bottom:44px}
+  button{font-family:var(--sans);cursor:pointer}
+  img{display:block}
+  .oculto{display:none!important}
+  @keyframes aparece{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+  .vista{animation:aparece .3s ease}
+
+  header{position:sticky;top:0;z-index:20;background:rgba(250,249,245,.88);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+         padding:16px 20px 12px;display:flex;align-items:center;gap:10px;border-bottom:1px solid rgba(232,230,222,.7)}
+  .logo{font-family:var(--serif);font-weight:600;font-size:22px;color:var(--verde-950);flex:1;display:flex;align-items:center;gap:8px;letter-spacing:-.01em}
+  .btn-icono{border:1px solid var(--borde);background:var(--carta);color:var(--verde-800);width:38px;height:38px;border-radius:50%;
+             font-size:16px;display:flex;align-items:center;justify-content:center;box-shadow:0 1px 2px rgba(4,52,44,.05)}
+  main{padding:8px 20px 0}
+
+  .saludo{font-family:var(--serif);font-size:31px;font-weight:500;line-height:1.12;margin:18px 0 10px;letter-spacing:-.01em}
+  .saludo em{font-style:normal;color:var(--verde-600)}
+  .sub{font-size:13.5px;color:var(--tinta-2);margin:2px 0 16px;line-height:1.6}
+  .peticion{margin:0 0 22px;font-size:13.5px;line-height:1.6;color:var(--tinta-2);border-left:2px solid var(--verde-200);padding:2px 0 2px 14px}
+  .peticion b{display:block;font-size:10.5px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--verde-600);margin-bottom:4px}
+  .peticion q{font-family:var(--serif);font-size:15px;color:var(--tinta);quotes:"«" "»"}
+  .chips{display:flex;flex-wrap:wrap;gap:6px}
+  .chip{font-size:11.5px;font-weight:500;padding:5px 12px;border-radius:999px;background:var(--verde-50);color:var(--verde-950);border:none}
+
+  .barra{display:flex;gap:8px;background:var(--carta);border:1.5px solid var(--verde-200);border-radius:22px;
+         padding:8px 8px 8px 16px;box-shadow:var(--sombra);margin:12px 0;align-items:center}
+  .barra input{flex:1;border:none;outline:none;font-family:var(--sans);font-size:14.5px;background:none;color:var(--tinta);min-width:0}
+  .barra input::placeholder{color:var(--tinta-3)}
+  .barra button{flex:none;border:none;background:var(--verde-800);color:#fff;width:42px;height:42px;border-radius:16px;font-size:17px;box-shadow:0 6px 16px -6px rgba(8,80,65,.5)}
+  .sugerencias{display:flex;gap:8px;overflow-x:auto;margin:0 -20px;padding:2px 20px 8px;scrollbar-width:none}
+  .sugerencias::-webkit-scrollbar{display:none}
+  .sugerencias button{flex:none;border:1px solid var(--borde);background:var(--carta);color:var(--tinta-2);font-size:12.5px;font-weight:500;padding:10px 15px;border-radius:999px;box-shadow:0 1px 2px rgba(4,52,44,.04)}
+  .enlace-manual{display:block;text-align:center;margin:16px 0 6px;font-size:13.5px;color:var(--verde-600);font-weight:600;background:none;border:none;width:100%}
+
+  .chat{display:flex;flex-direction:column;gap:10px;padding-bottom:16px}
+  .burbuja{max-width:86%;padding:12px 16px;border-radius:20px;font-size:14.5px;line-height:1.5;animation:aparece .25s ease}
+  .burbuja.ia{background:var(--carta);border:1px solid var(--borde);border-bottom-left-radius:6px;align-self:flex-start;box-shadow:0 1px 2px rgba(4,52,44,.04)}
+  .burbuja.yo{background:var(--verde-800);color:#fff;border-bottom-right-radius:6px;align-self:flex-end}
+  .escribiendo{align-self:flex-start;color:var(--tinta-3);font-size:20px;letter-spacing:3px;padding:0 6px;animation:aparece .2s}
+  .opciones{display:flex;flex-wrap:wrap;gap:8px;margin:4px 0 6px}
+  .opciones button{border:1.5px solid var(--verde-200);background:var(--carta);color:var(--verde-950);font-size:13.5px;
+                   padding:11px 16px;border-radius:18px;font-weight:500;box-shadow:0 1px 2px rgba(4,52,44,.04)}
+  .opciones button.sel{background:var(--verde-800);color:#fff;border-color:var(--verde-800)}
+  .campo{display:flex;gap:8px;margin:4px 0 6px}
+  .campo input{flex:1;border:1.5px solid var(--verde-200);border-radius:16px;padding:12px 15px;font-family:var(--sans);font-size:14.5px;outline:none;background:var(--carta)}
+  .campo button{border:none;background:var(--verde-800);color:#fff;padding:0 18px;border-radius:16px;font-weight:600}
+  .saltar{background:none;border:none;color:var(--tinta-3);font-size:12.5px;text-decoration:underline;margin-top:2px}
+
+  .tarjeta{display:block;background:var(--carta);border:1px solid var(--borde);border-radius:var(--radio);overflow:hidden;
+           margin:0 0 22px;box-shadow:var(--sombra);cursor:pointer;opacity:0;transform:translateY(14px);
+           transition:opacity .55s ease,transform .55s ease}
+  .tarjeta.visible{opacity:1;transform:none}
+  .tarjeta:active{transform:scale(.985)}
+  .hero{position:relative;height:300px;background:linear-gradient(160deg,var(--verde-800),var(--verde-950));overflow:hidden}
+  .hero img{width:100%;height:100%;object-fit:cover}
+  .hero .velo{position:absolute;inset:0;background:linear-gradient(180deg,rgba(4,52,44,.18) 0%,rgba(4,52,44,0) 30%,rgba(4,52,44,0) 48%,rgba(4,52,44,.78) 100%)}
+  .hero .letra{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:var(--serif);font-weight:500;font-size:110px;color:var(--verde-200);opacity:.92;
+    background:repeating-radial-gradient(circle at 50% 44%,transparent 0 34px,rgba(159,225,203,.10) 34px 35px)}
+  .badge{position:absolute;top:14px;left:14px;font-size:10px;font-weight:700;letter-spacing:.1em;padding:7px 13px;border-radius:999px;
+         backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);display:flex;align-items:center;gap:6px}
+  .badge::before{content:'';width:5px;height:5px;border-radius:50%}
+  .badge.seguro{background:rgba(250,249,245,.92);color:var(--verde-950)}
+  .badge.seguro::before{background:var(--verde-600)}
+  .badge.sorpresa{background:rgba(216,90,48,.95);color:#fff}
+  .badge.sorpresa::before{background:#fff}
+  .precio{position:absolute;right:14px;bottom:16px;font-size:11.5px;font-weight:600;color:#fff;background:rgba(4,52,44,.38);
+          backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);padding:6px 12px;border-radius:999px;border:1px solid rgba(255,255,255,.22)}
+  .hero .titulo{position:absolute;left:18px;right:120px;bottom:14px;color:#fff}
+  .hero .titulo h2{font-family:var(--serif);font-weight:500;font-size:32px;line-height:1.05;letter-spacing:-.01em;text-shadow:0 2px 16px rgba(0,0,0,.35)}
+  .hero .titulo p{font-size:12.5px;opacity:.9;margin-top:4px;text-shadow:0 1px 8px rgba(0,0,0,.3)}
+  .cuerpo{padding:16px 18px 14px}
+  .porques{list-style:none}
+  .porques li{display:flex;gap:11px;font-size:13.5px;line-height:1.5;color:var(--tinta-2);padding:5px 0;align-items:flex-start}
+  .porques li::before{content:'✓';flex:none;width:17px;height:17px;border-radius:50%;background:var(--verde-50);color:var(--verde-600);
+                      font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;margin-top:2px}
+  .abrir{display:flex;align-items:center;justify-content:space-between;margin-top:10px;padding-top:12px;border-top:1px solid var(--borde);font-size:12px;font-weight:600;color:var(--verde-800)}
+  .abrir small{font-weight:500;color:var(--tinta-3);font-size:11px;display:flex;align-items:center;gap:5px}
+  .abrir small::before{content:'✓';color:var(--verde-600);font-weight:700}
+  .mini-nota{font-size:12px;color:var(--tinta-3);margin-top:10px}
+
+  .aviso-deficit{background:linear-gradient(170deg,var(--verde-50),#F2FAF6);border:1px solid var(--verde-200);border-radius:var(--radio);
+                 padding:26px 22px 24px;margin:0 0 22px;text-align:center}
+  .aviso-deficit .brujula-icono{width:44px;height:44px;margin:0 auto 14px;border-radius:50%;background:var(--carta);border:1px solid var(--verde-200);
+                 display:flex;align-items:center;justify-content:center;color:var(--verde-600);animation:girar 9s linear infinite}
+  @keyframes girar{to{transform:rotate(360deg)}}
+  .aviso-deficit h3{font-family:var(--serif);font-weight:500;font-size:21px;color:var(--verde-950);line-height:1.2}
+  .aviso-deficit p{font-size:13px;color:var(--tinta-2);margin-top:8px;line-height:1.6;max-width:280px;margin-left:auto;margin-right:auto}
+  .aviso-deficit .sello{display:inline-flex;align-items:center;gap:6px;margin-top:14px;font-size:11px;font-weight:600;color:var(--verde-800);background:var(--carta);border:1px solid var(--verde-200);padding:6px 13px;border-radius:999px}
+
+  .btn-refresco{display:flex;width:100%;border:1.5px dashed var(--verde-200);background:none;color:var(--verde-800);
+                font-size:14px;font-weight:600;padding:16px;border-radius:18px;margin:2px 0 8px;align-items:center;justify-content:center;gap:8px}
+  .siguiente .esbozo{height:110px;border-radius:var(--radio) var(--radio) 0 0;border:1px solid var(--borde);border-bottom:none;
+    background:linear-gradient(180deg,var(--carta),rgba(255,255,255,0));overflow:hidden;position:relative;
+    mask-image:linear-gradient(180deg,#000 20%,transparent 100%);-webkit-mask-image:linear-gradient(180deg,#000 20%,transparent 100%)}
+  .siguiente .esbozo i{display:block;background:linear-gradient(90deg,#F0EEE6 25%,#F7F5EE 45%,#F0EEE6 65%);background-size:220% 100%;animation:brillo 1.8s ease infinite;border-radius:10px}
+  @keyframes brillo{from{background-position:130% 0}to{background-position:-90% 0}}
+  .siguiente .esbozo i:nth-child(1){height:58px;margin:14px 16px 10px;border-radius:14px}
+  .siguiente .esbozo i:nth-child(2){height:11px;margin:0 16px 8px;width:55%}
+  .siguiente .esbozo i:nth-child(3){height:11px;margin:0 16px;width:75%}
+  .verificando{display:flex;align-items:center;justify-content:center;gap:9px;font-size:12px;font-weight:500;color:var(--tinta-2);margin:2px 0 0}
+  .verificando .punto{width:6px;height:6px;border-radius:50%;background:var(--verde-600);animation:latir 1.4s ease infinite}
+  @keyframes latir{0%,100%{opacity:.25;transform:scale(.8)}50%{opacity:1;transform:scale(1)}}
+  .pie{font-size:11px;color:var(--tinta-3);text-align:center;margin:22px 0 36px;line-height:1.8}
+  .pie b{color:var(--tinta-2);font-weight:600}
+
+  .hero-d{height:420px;border-radius:0 0 28px 28px;cursor:default;margin:0 -20px}
+  .hero-d .velo{background:linear-gradient(180deg,rgba(4,52,44,.34) 0%,rgba(4,52,44,0) 26%,rgba(4,52,44,0) 46%,rgba(4,52,44,.82) 100%)}
+  .hero-d .titulo{left:20px;right:20px;bottom:20px}
+  .hero-d .titulo h2{font-size:42px;line-height:1}
+  .datos{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
+  .datos span{font-size:11px;font-weight:600;color:#fff;background:rgba(250,249,245,.16);border:1px solid rgba(255,255,255,.24);
+              backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);padding:5px 11px;border-radius:999px}
+  .seccion{margin:26px 0}
+  .seccion h3{font-family:var(--serif);font-weight:500;font-size:20px;margin-bottom:12px;color:var(--verde-950);letter-spacing:-.01em}
+  .editorial{font-family:var(--serif);font-size:17.5px;line-height:1.6}
+  .editorial::first-letter{color:var(--verde-600)}
+  .fila{display:flex;gap:14px;background:var(--carta);border:1px solid var(--borde);border-radius:18px;
+        padding:12px;margin:10px 0;align-items:center;box-shadow:0 1px 2px rgba(4,52,44,.04)}
+  .fila .foto{flex:none;width:76px;height:76px;border-radius:13px;overflow:hidden;
+              background:linear-gradient(150deg,var(--verde-50),var(--verde-200));display:flex;align-items:center;justify-content:center;color:var(--verde-800)}
+  .fila .foto img{width:100%;height:100%;object-fit:cover}
+  .fila .foto span{font-size:24px}
+  .fila .info{flex:1;min-width:0}
+  .fila .info b{font-size:13.5px;font-weight:600;display:block;line-height:1.35}
+  .fila .info small{font-size:12px;color:var(--tinta-2);display:block;margin-top:3px;line-height:1.45}
+  .fila .dato{font-size:11px;color:var(--verde-600);font-weight:600;margin-top:5px;display:inline-flex;align-items:center;gap:5px;background:var(--verde-50);padding:3px 9px;border-radius:999px}
+  .meses{display:flex;gap:4px;margin-top:4px}
+  .mes{flex:1;text-align:center;font-size:9.5px;font-weight:500;color:var(--tinta-3);padding-top:34px;position:relative}
+  .mes i{position:absolute;top:12px;left:10%;right:10%;height:18px;border-radius:7px;background:#EFEDE5}
+  .mes.ideal i{background:var(--verde-600)} .mes.buena i{background:var(--verde-200)}
+  .mes.ideal{color:var(--verde-800);font-weight:600}
+  .mes.pedido::after{content:'';position:absolute;top:4px;left:50%;width:4px;height:4px;margin-left:-2px;border-radius:50%;background:var(--coral-500)}
+  .leyenda{display:flex;gap:16px;margin-top:12px;font-size:11px;color:var(--tinta-3)}
+  .leyenda span{display:flex;align-items:center;gap:6px}
+  .leyenda i{width:10px;height:10px;border-radius:4px}
+  .leyenda .l-ideal i{background:var(--verde-600)} .leyenda .l-buena i{background:var(--verde-200)}
+  .leyenda .l-pedido i{width:5px;height:5px;border-radius:50%;background:var(--coral-500)}
+  .cta{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;border:none;background:var(--verde-800);color:#fff;
+       font-size:15px;font-weight:600;padding:17px;border-radius:18px;margin:24px 0 8px;box-shadow:0 10px 26px -10px rgba(8,80,65,.55);transition:transform .15s ease}
+  .cta:active{transform:scale(.98)}
+  .verificado{display:flex;align-items:flex-start;gap:9px;font-size:11.5px;line-height:1.6;color:var(--tinta-3);margin:26px 0 28px;
+              padding:14px 16px;background:var(--carta);border:1px solid var(--borde);border-radius:16px}
+  .verificado::before{content:'✓';flex:none;width:18px;height:18px;border-radius:50%;background:var(--verde-50);color:var(--verde-600);
+                      font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;margin-top:1px}
+
+  .regen{display:flex;gap:8px;overflow-x:auto;margin:18px -20px 4px;padding:2px 20px 8px;scrollbar-width:none}
+  .regen::-webkit-scrollbar{display:none}
+  .regen button{flex:none;border:1px solid var(--borde);background:var(--carta);color:var(--tinta-2);font-size:12.5px;font-weight:500;
+                padding:9px 15px;border-radius:999px;box-shadow:0 1px 2px rgba(4,52,44,.04);transition:background .2s,color .2s,border-color .2s}
+  .regen button.sel{background:var(--verde-950);border-color:var(--verde-950);color:#fff}
+  .dia{background:var(--carta);border:1px solid var(--borde);border-radius:20px;padding:16px 18px;margin:12px 0;box-shadow:0 1px 2px rgba(4,52,44,.04)}
+  .dia .cab{display:flex;align-items:baseline;gap:10px;margin-bottom:10px;padding-bottom:10px;border-bottom:1px solid var(--borde)}
+  .dia .num{font-family:var(--serif);font-size:20px;font-weight:600;color:var(--verde-800)}
+  .dia .amb{font-size:10px;font-weight:700;color:var(--coral-600);text-transform:uppercase;letter-spacing:.1em;background:var(--coral-50);padding:4px 10px;border-radius:999px}
+  .bloque{display:flex;gap:12px;padding:6px 0;font-size:13.5px}
+  .bloque .h{flex:none;width:60px;font-size:10px;font-weight:700;color:var(--tinta-3);padding-top:3px;text-transform:uppercase;letter-spacing:.08em}
+  .bloque .p{flex:1;color:var(--tinta-2);line-height:1.5}
+  .tarjeton{position:relative;background:linear-gradient(165deg,var(--verde-800),var(--verde-950));border-radius:24px;color:#fff;
+            padding:24px 22px;margin:28px 0 10px;overflow:hidden;box-shadow:0 18px 44px -16px rgba(4,52,44,.5)}
+  .tarjeton::before{content:'';position:absolute;top:-70px;right:-70px;width:230px;height:230px;border-radius:50%;
+    background:repeating-radial-gradient(circle at center,transparent 0 26px,rgba(159,225,203,.12) 26px 27px);pointer-events:none}
+  .tarjeton .sobre{font-size:10px;letter-spacing:.14em;color:var(--verde-200);font-weight:700}
+  .tarjeton h4{font-family:var(--serif);font-size:27px;font-weight:500;margin:8px 0 3px;letter-spacing:-.01em}
+  .tarjeton>p{font-size:13px;color:var(--verde-200)}
+  .tarjeton ul{list-style:none;margin-top:14px}
+  .tarjeton li{font-size:13px;padding:5px 0;color:#EAF7F1;display:flex;gap:9px;line-height:1.45}
+  .tarjeton li::before{content:'';flex:none;width:5px;height:5px;border-radius:50%;background:var(--verde-200);margin-top:8px}
+  .btn-secundario{display:block;width:100%;border:1.5px solid var(--verde-200);background:none;color:var(--verde-800);
+                  font-size:14px;font-weight:600;padding:14px;border-radius:18px;margin:8px 0}
+
+  .resultado{display:flex;gap:12px;background:var(--carta);border:1px solid var(--borde);border-radius:18px;padding:12px;margin:10px 0;align-items:center;cursor:pointer;box-shadow:0 1px 2px rgba(4,52,44,.04)}
+  .resultado .mini{flex:none;width:56px;height:56px;border-radius:13px;background:linear-gradient(150deg,var(--verde-800),var(--verde-950));
+                   display:flex;align-items:center;justify-content:center;font-family:var(--serif);font-size:22px;color:var(--verde-200);overflow:hidden}
+  .resultado .mini img{width:100%;height:100%;object-fit:cover}
+</style>
+</head>
+<body>
+<header>
+  <button class="btn-icono oculto" id="atras" aria-label="Volver">←</button>
+  <div class="logo"><svg width="22" height="22" viewBox="0 0 22 22" fill="none" aria-hidden="true"><circle cx="11" cy="11" r="9.5" stroke="#04342C" stroke-width="1.6"/><path d="M13.8 8.2 12 12l-3.8 1.8L10 10l3.8-1.8Z" fill="#D85A30"/></svg>Brújula</div>
+  <button class="btn-icono" id="menu" aria-label="Ajustes">⋯</button>
+</header>
+<main id="app"></main>
+
+<script src="datos.js"></script>
+<script>
+'use strict';
+const B = window.BRUJULA;
+const $ = (s) => document.querySelector(s);
+const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const norm = (s) => String(s ?? '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+const MESES = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+const MES3 = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+const ICONO = { rutas:'🥾', gastronomia:'🍽️', alojamientos:'🛏️', cultura_ocio:'✨', playas:'🌊' };
+const TITSEC = { rutas:'Rutas', gastronomia:'Dónde comer', cultura_ocio:'Planes', playas:'Playas y calas', alojamientos:'Dónde dormir' };
+const DESTINOS = Object.values(B.destinos);
+const verif = (arr) => (arr ?? []).filter((e) => e.verificacion?.estado === 'verificado');
+
+/* ============ FOTOS: Wikipedia → Commons → respaldo (nunca imagen rota) ============ */
+const cacheFotos = {};
+const noEsFoto = (u) => /\.svg|escudo|coat|flag|bandera|locator|_map|mapa_|logo|wappen|seal_of/i.test(u ?? '');
+async function candidatosFoto(titulo, ancho) {
+  if (!titulo) return [];
+  const clave = titulo + '|' + ancho;
+  if (cacheFotos[clave]) return cacheFotos[clave];
+  const lista = [];
+  const amplia = (u) => u.replace(/\/\d+px-/, `/${ancho}px-`);
+  try {
+    const r = await fetch('https://es.wikipedia.org/api/rest_v1/page/summary/' + encodeURIComponent(titulo));
+    if (r.ok) { const j = await r.json(); const c = j.thumbnail?.source;
+      if (c && !noEsFoto(c)) { const g = amplia(c); if (g !== c) lista.push(g); lista.push(c); } }
+    if (!lista.length) {
+      const r2 = await fetch('https://es.wikipedia.org/api/rest_v1/page/media-list/' + encodeURIComponent(titulo));
+      if (r2.ok) { const j2 = await r2.json();
+        const it = (j2.items ?? []).find((x) => x.type === 'image' && x.srcset?.[0]?.src && !noEsFoto(x.srcset[0].src));
+        if (it) { let s = it.srcset[0].src; if (s.startsWith('//')) s = 'https:' + s; const g = amplia(s); if (g !== s) lista.push(g); lista.push(s); } }
+    }
+  } catch {}
+  cacheFotos[clave] = lista; return lista;
+}
+async function fotoCommons(consulta, ancho) {
+  const clave = 'c|' + consulta + '|' + ancho;
+  if (cacheFotos[clave]) return cacheFotos[clave];
+  const lista = [];
+  try {
+    const u = 'https://commons.wikimedia.org/w/api.php?action=query&format=json&origin=*&generator=search' +
+      '&gsrnamespace=6&gsrlimit=4&gsrsearch=' + encodeURIComponent(consulta) + '&prop=imageinfo&iiprop=url&iiurlwidth=' + ancho;
+    const r = await fetch(u);
+    if (r.ok) { const j = await r.json();
+      for (const p of Object.values(j.query?.pages ?? {})) {
+        const ii = p.imageinfo?.[0];
+        if (ii?.thumburl && !noEsFoto(ii.thumburl) && /\.(jpe?g|png|webp)/i.test(p.title ?? '')) lista.push(ii.thumburl);
+      } }
+  } catch {}
+  cacheFotos[clave] = lista.slice(0, 2); return cacheFotos[clave];
+}
+function ponFoto(idEl, candidatosPromesa) {
+  candidatosPromesa.then((lista) => {
+    const el = document.getElementById(idEl);
+    if (!el || !lista.length) return;
+    const intenta = (i) => {
+      if (i >= lista.length) return;
+      const img = new Image(); img.alt = '';
+      img.onload = () => { const ph = el.querySelector('.letra, span'); if (ph) ph.remove(); el.insertBefore(img, el.firstChild); };
+      img.onerror = () => intenta(i + 1);
+      img.src = lista[i];
+    };
+    intenta(0);
+  });
+}
+async function candidatosElemento(el, destino, ancho) {
+  const lista = [];
+  const wiki = B.fotos_elemento[el.nombre];
+  if (wiki) lista.push(...await candidatosFoto(wiki, ancho));
+  if (!lista.length) {
+    const limpio = el.nombre.replace(/\(.*?\)/g, '').split(/[—:·]/)[0].trim();
+    if (limpio.length > 3) lista.push(...await candidatosFoto(limpio, ancho));
+    if (!lista.length) lista.push(...await fotoCommons(limpio + ' ' + destino.nombre.split(' ')[0], ancho));
+  }
+  return lista;
+}
+
+/* ============ TAXONOMÍA ============ */
+function ambitosDeElemento(el) {
+  const out = new Set();
+  for (const a of el.experiencias ?? []) if (B.tax.ambitos[a]) out.add(a);
+  const tipos = Array.isArray(el.tipo) ? el.tipo : (el.tipo ? [el.tipo] : []);
+  for (const t of tipos) for (const a of B.tax.legacy[t] ?? []) out.add(a);
+  if (out.size === 0 || tipos.some((t) => !B.tax.legacy[t])) {
+    const txt = norm([tipos.join(' '), el.nombre].join(' '));
+    for (const [re, as] of Object.entries(B.tax.palabra)) { if (re[0] === '_') continue;
+      if (new RegExp(re).test(txt)) for (const a of as) out.add(a); }
+  }
+  return [...out];
+}
+function ambitosDeDestino(d) {
+  const out = new Set();
+  for (const g of ['rutas','gastronomia','alojamientos','cultura_ocio','playas'])
+    for (const el of verif(d[g])) for (const a of ambitosDeElemento(el)) out.add(a);
+  return out;
+}
+function ambitosDeInteres(pf) {
+  const txt = norm(JSON.stringify([pf.intereses, pf.temperamento, pf.vida_cotidiana, pf.gastronomia, pf.companias, pf.alojamiento?.valores]));
+  const out = new Set();
+  for (const [re, as] of Object.entries(B.tax.interes)) { if (re[0] === '_') continue;
+    if (new RegExp(re).test(txt)) for (const a of as) out.add(a); }
+  return out;
+}
+
+/* ============ MOTOR-LITE (gemelo de motor/recomendar.mjs — mantener en sincronía) ============ */
+const AMB_NUEVOS = ['arquitectura','fiesta_nocturna','bienestar','vida_local','artesania_compras','eventos_festivales','espiritual','romantico'];
+function filtrosDuros(pf, viaje, d) {
+  const texto = norm(JSON.stringify([pf.restricciones, pf.presupuesto?.nota, viaje?.restricciones_viaje]));
+  const compania = norm(JSON.stringify([pf.companias, viaje?.compania?.detalle]));
+  const apto = d.apto_para ?? {}; const fallos = [];
+  const origen = norm(pf.ciudad_origen ?? ''); const nombreD = norm(d.nombre);
+  const partes = [origen.replace(/\s*\(.*\)/, '').trim(), (origen.match(/\((.*)\)/) || [])[1]].filter(Boolean).map(norm);
+  if (partes.some((px) => px && (nombreD === px || nombreD.includes(px) || px.includes(nombreD)))) fallos.push('es tu ciudad');
+  if (/silla de ruedas|movilidad/.test(texto) && !(apto.movilidad_reducida?.apto === true && apto.movilidad_reducida?.verificado === true)) fallos.push('accesibilidad sin verificar');
+  if (/lgtb/.test(texto) && apto.lgtb?.nivel !== 'abierto') fallos.push('LGTB no abierto');
+  if (/seguridad/.test(texto) && apto.mujer_sola?.nivel_seguridad !== 'alto') fallos.push('seguridad');
+  if (/bebe|carrito/.test(texto + compania) && apto.bebes?.apto !== true) fallos.push('no apto bebé');
+  if (/multigeneracional/.test(compania) && apto.multigeneracional?.apto !== true) fallos.push('no multigeneracional');
+  if (/ninos|hijos|adolescentes/.test(compania) && apto.familia_ninos?.apto !== true) fallos.push('no familia');
+  if (/presupuesto cerrado|presupuesto duro|innegociable/.test(texto)) {
+    const maxP = pf.presupuesto?.eur_persona_dia?.[1] ?? Infinity;
+    if ((d.presupuesto?.eur_persona_dia?.[0] ?? 0) > maxP) fallos.push('fuera de presupuesto');
+  }
+  return fallos;
+}
+function enHistorial(pf, d) {
+  const nD = norm(d.nombre), sD = norm(d.slug).replace(/-/g, ' ');
+  for (const v of pf.experiencia_viajera?.viajes_valorados ?? []) {
+    const h = norm(v.destino);
+    if (h.includes(nD) || nD.includes(h) || h.includes(sD)) return v;
+  }
+  return null;
+}
+function encaje(pf, d, mes) {
+  let s = 0; const raz = [], ctx = [];
+  const tInt = norm(JSON.stringify([pf.intereses, pf.temperamento, pf.vida_cotidiana?.domingo_libre]));
+  const car = norm(JSON.stringify(d.caracter));
+  const rutasOk = verif(d.rutas), gastroOk = verif(d.gastronomia), alojOk = verif(d.alojamientos);
+  const cultOk = verif(d.cultura_ocio), playasOk = verif(d.playas);
+  if (mes) { const c = d.clima_por_mes?.[String(mes)];
+    if (c?.valoracion === 'evitar') return { s: -999, raz: [] };
+    if (c?.valoracion === 'ideal') { s += 1.5; ctx.push(`En ${MESES[mes-1]} el clima es ideal: ${c.nota}`); }
+    else if (c?.valoracion === 'buena') s += .5; else if (c?.valoracion === 'regular') s -= 1; }
+  const [pMin, pMax] = pf.presupuesto?.eur_persona_dia ?? [0, Infinity];
+  const [dMin, dMax] = d.presupuesto?.eur_persona_dia ?? [0, 0];
+  if (dMin > pMax) s -= 3;
+  else if (dMin >= pMin * .7 && dMax <= pMax * 1.3) { s += 1; ctx.push(`Encaja en tu presupuesto: ${dMin}-${dMax} €/persona/día sin vuelos`); }
+  else s += .3;
+  if (/naturaleza|monte|ruta|senderismo|paisaje|trail|montana|levadas|andar|pasear/.test(tInt) && rutasOk.length) {
+    const exigente = /muy alta/.test(norm(pf.actividad_fisica)) || /dura|trail|ferrata/.test(tInt);
+    const r = exigente ? rutasOk.find((x) => x.dificultad !== 'facil') : rutasOk[0];
+    if (r) { s += 1.5; raz.push(`Rutas a tu medida: ${r.nombre} (${r.distancia_km} km, ${r.dificultad})`); } else s -= 1;
+  }
+  if (/playa|calas|mar |navegacion|vela|surf|buceo/.test(tInt) && (playasOk.length || /costa|surf|isla/.test(car))) {
+    s += 1; if (playasOk[0]) raz.push(`${playasOk[0].nombre}: ${playasOk[0].descripcion}`.slice(0, 120));
+  }
+  if (/cultura|museo|historia|arquitectura|patrimonio/.test(tInt)) {
+    const c = cultOk.find((x) => /patrimonio|museo|arte/.test(norm(JSON.stringify(x.tipo))));
+    if (c) { s += 1; raz.push(`Cultura con sustancia: ${c.nombre}`); }
+  }
+  if (/fauna|aves|cielo|estrella|fotografia|luz/.test(tInt)) {
+    const c = cultOk.find((x) => /fauna|astronomia|paisaje|termas/.test(norm(JSON.stringify(x.tipo))));
+    if (/fauna|cielo-nocturno|volcanico/.test(car) || c) { s += 1; if (c) raz.push(`Para tu ojo: ${c.nombre}`); }
+  }
+  const tG = norm(JSON.stringify(pf.gastronomia)); let gp = 0;
+  for (const g of gastroOk) { const t = norm(JSON.stringify(g.tipo));
+    if ((/sibarita|producto|estrella|vino/.test(tG) && /sibarita/.test(t)) ||
+        (/local|probar|curiosidad|autentic|exotic|todo/.test(tG) && /local-autentico|exotico/.test(t)) ||
+        (/vegan|vegetarian|sano/.test(tG) && /sano/.test(t)) ||
+        (/barat|economic|abundante/.test(tG) && /economico/.test(t))) {
+      gp += .5; if (gp === .5) raz.push(`Se come como buscas: ${g.nombre}`); } }
+  s += Math.min(gp, 1.5);
+  if (/vino|bodega|enoturismo/.test(tInt + tG) && /enoturismo/.test(car)) s += 1;
+  if (/adrenalina|aventura|ferrata|rafting|kayak|escalada|deporte|surf|btt|bici/.test(tInt) || /alta|muy alta/.test(norm(pf.actividad_fisica))) {
+    const a = cultOk.find((x) => /aventura|deportiva|acuatica/.test(norm(JSON.stringify(x.tipo))));
+    const rd = rutasOk.find((r) => r.dificultad === 'exigente' || r.distancia_km >= 15);
+    if (a || rd || /aventura|surf|montana/.test(car)) { s += 1.5; if (a) raz.push(`Dosis de acción: ${a.nombre}`); else if (rd) raz.push(`Reto de verdad: ${rd.nombre} (${rd.distancia_km} km)`); }
+  }
+  const tM = norm(pf.masificacion ?? '');
+  if (/odia|evita|huye/.test(tM)) {
+    if (d.masificacion?.nivel_general === 'bajo') { s += 1; raz.push('Sin masificaciones: destino estructuralmente tranquilo'); }
+    else if (d.masificacion?.nivel_general === 'alto') s -= 1.5; else s += .2;
+  }
+  const tA = norm(JSON.stringify(pf.alojamiento?.valores));
+  const busca = (re, cars) => { if (re.test(tA)) { const a = alojOk.find((x) => cars.includes(x.caracter)); if (a) { s += 1; raz.push(`Duerme como te gusta: ${a.nombre}`); } } };
+  busca(/alma|autentico|local|caracter/, ['con-alma','singular-premium']);
+  busca(/boutique|diseno/, ['boutique','singular-premium']);
+  busca(/barato|economic|hostel|pension|apartamento|albergue/, ['economico','villa-grupo']);
+  busca(/villa|casa grande|piscina/, ['villa-grupo']);
+  const ambP = ambitosDeInteres(pf), ambD = ambitosDeDestino(d);
+  let ba = 0;
+  for (const a of AMB_NUEVOS) if (ambP.has(a) && ambD.has(a)) { ba += 1; if (ba <= 2) raz.push(`Tu rollo, ${norm(B.tax.ambitos[a])}: lo hay aquí de verdad`); }
+  s += Math.min(ba, 3);
+  return { s: Math.round(s * 100) / 100, raz: [...raz, ...ctx] };
+}
+// Devuelve todos los candidatos ordenados, en dos bolsas: seguros y sorpresas de verdad.
+function calcularBolsas(pf, viaje) {
+  const mes = viaje?.mes ?? null;
+  const cands = [];
+  for (const d of DESTINOS) {
+    if (filtrosDuros(pf, viaje, d).length) continue;
+    const hist = enHistorial(pf, d);
+    const e = encaje(pf, d, mes);
+    if (e.s <= -100) continue;
+    const horas = d.acceso_desde_espana?.horas_puerta_a_puerta ?? {};
+    const ciudad = norm(pf.ciudad_origen ?? '');
+    for (const k of Object.keys(horas)) { if (ciudad && (norm(k).includes(ciudad) || ciudad.includes(norm(k)))) {
+      if (horas[k] >= 7) e.s -= 1.5; else if (horas[k] <= 4) e.s += .5; break; } }
+    const esCons = (d.caracter ?? []).includes('consolidado-famoso');
+    const notor = d.notoriedad ?? (esCons ? 'alta' : 'media');
+    cands.push({ d, hist, esCons, notor, s: e.s, raz: e.raz });
+  }
+  cands.sort((a, b) => b.s - a.s);
+  const seguros = cands.filter((c) => (c.esCons || c.notor === 'alta' || (c.hist && (c.hist.valoracion ?? 0) >= 4)) && c.s >= 0);
+  const sorpresas = cands
+    .filter((c) => !c.hist && !c.esCons && c.notor !== 'alta' && c.d.masificacion?.nivel_general !== 'alto' && c.s >= 0)
+    .sort((a, b) => (b.s + (b.notor === 'baja' ? .75 : 0)) - (a.s + (a.notor === 'baja' ? .75 : 0)));
+  return { seguros, sorpresas };
+}
+
+/* ============ EXPERIENCIA-LITE (gemelo de motor/experiencia.mjs) ============ */
+function construirCarta(pf, viaje, d, boost) {
+  const restr = norm(JSON.stringify([viaje?.restricciones_viaje, pf.restricciones]));
+  const conBebe = /bebe|carrito/.test(restr);
+  const sinCuestas = /cuesta|movilidad|silla/.test(restr);
+  const intAmb = ambitosDeInteres(pf);
+  const bonus = (el) => { const a = ambitosDeElemento(el);
+    return a.filter((x) => intAmb.has(x)).length + a.filter((x) => boost.has(x)).length * 4; };
+  let rutas = verif(d.rutas);
+  if (sinCuestas) rutas = rutas.filter((r) => r.apta_movilidad_reducida);
+  if (conBebe) rutas = rutas.filter((r) => r.apta_carrito || r.dificultad === 'facil');
+  const rutasSel = rutas.slice(0, 2);
+  const pMax = pf.presupuesto?.eur_persona_dia?.[1] ?? Infinity;
+  const rest = verif(d.gastronomia).map((g) => { let p = bonus(g);
+    if ((g.rango_precio_eur?.[0] ?? 0) > pMax * 1.5) p -= 2;
+    if (boost.has('_barato')) p += (g.rango_precio_eur?.[0] ?? 0) <= 25 ? 2 : -1;
+    return { g, p }; }).sort((a, b) => b.p - a.p).slice(0, 6).map((x) => x.g);
+  let aloj = verif(d.alojamientos);
+  if (conBebe) aloj = aloj.filter((a) => a.apto_bebes).concat(aloj.filter((a) => !a.apto_bebes));
+  const alojSel = aloj.slice(0, 3);
+  const acts = [...verif(d.cultura_ocio), ...verif(d.playas)]
+    .map((a) => ({ a, p: bonus(a) * 2 })).sort((x, y) => y.p - x.p).slice(0, 5).map((x) => x.a);
+  return { rutas: rutasSel, restaurantes: rest, alojamientos: alojSel, actividades: acts, conBebe };
+}
+function construirDias(pf, viaje, d, carta, mods) {
+  const nDias = viaje?.duracion_dias ?? 5;
+  const restr = norm(JSON.stringify([viaje?.restricciones_viaje, pf.restricciones]));
+  const conBebe = carta.conBebe;
+  const sinMadrugar = mods.has('sin-madrugar') || /madrugar|lento/.test(restr) || /tranquilo/.test(norm(pf.temperamento));
+  const pool = [
+    ...carta.rutas.map((r) => ({ plan: 'Ruta: ' + r.nombre, ref: r.nombre, amb: ambitosDeElemento(r) })),
+    ...carta.actividades.map((a) => ({ plan: a.nombre, ref: a.nombre, amb: ambitosDeElemento(a) })),
+  ];
+  const usados = new Set(), vistos = new Map();
+  const boost = new Set([...mods].flatMap((m) => B.tax.regeneraciones[m]?.boost_ambitos ?? []));
+  const valor = (it) => { if (usados.has(it.ref)) return -Infinity;
+    let v = it.plan.startsWith('Ruta') ? 1 : 0;
+    for (const a of it.amb) { v -= (vistos.get(a) ?? 0) * 2; if (boost.has(a)) v += 5; }
+    return v; };
+  const toma = () => { let mejor = null, mv = -Infinity;
+    for (const it of pool) { const v = valor(it); if (v > mv) { mv = v; mejor = it; } }
+    if (!mejor || mv === -Infinity) return null;
+    usados.add(mejor.ref); for (const a of mejor.amb) vistos.set(a, (vistos.get(a) ?? 0) + 1);
+    return mejor; };
+  const rests = [...carta.restaurantes]; let rj = 0;
+  const cena = () => rests.length ? rests[rj++ % rests.length] : null;
+  const dias = [];
+  for (let n = 1; n <= nDias; n++) {
+    const bl = {};
+    let ambDia = null;
+    if (n === 1) { bl.manana = 'Llegada y acomodo'; bl.tarde = 'Paseo suave para tomar el pulso al sitio'; }
+    else if (n === nDias) { bl.manana = 'Mañana sin prisa antes de volver'; const a = toma(); if (a) { bl.tarde = a.plan; ambDia = a.amb[0]; } }
+    else {
+      const m = toma(); if (m) { bl.manana = m.plan; ambDia = m.amb[0]; } else bl.manana = 'Tiempo libre';
+      if (conBebe) bl.tarde = 'Tarde tranquila (siesta del bebé) y paseo corto';
+      else { const t = toma(); bl.tarde = t ? t.plan : 'Tiempo libre'; }
+    }
+    if (n < nDias) { const c = cena(); if (c) bl.noche = 'Cena: ' + c.nombre; }
+    dias.push({ n, amb: ambDia ? (B.tax.ambitos[ambDia] ?? ambDia) : (n === 1 ? 'Llegada' : 'Libre'), bl });
+  }
+  return { dias, cubiertos: [...vistos.keys()] };
+}
+
+/* ============ PARSER-LITE (gemelo de motor/parsear.mjs) ============ */
+function parsearFrase(frase) {
+  const t = norm(frase);
+  let dur = null;
+  const md = t.match(/(\d+)\s*(d[ií]as?|noches?)/); if (md) dur = +md[1];
+  else if (/una semana/.test(t)) dur = 7; else if (/dos semanas|quincena/.test(t)) dur = 14;
+  else if (/fin de semana|finde/.test(t)) dur = 3; else if (/puente/.test(t)) dur = 4;
+  else if (/un mes/.test(t)) dur = 30;
+  let mes = null; for (let i = 0; i < 12; i++) if (t.includes(MESES[i])) { mes = i + 1; break; }
+  let comp = null;
+  if (/beb[eé]|ni[ñn]|hij|nieto|peques|adolescente/.test(t)) comp = 'familia';
+  else if (/amig|pandilla|colegas|club/.test(t)) comp = 'amigos';
+  else if (/mi mujer|mi marido|mi pareja|mi novi|en pareja|los dos/.test(t)) comp = 'pareja';
+  else if (/\bsol[oa]\b|yo sol/.test(t)) comp = 'solo';
+  const bebeM = t.match(/(\d+)\s*meses/);
+  const restr = [];
+  if (/silla de ruedas|movilidad reducida|accesib/.test(t)) restr.push('accesibilidad para movilidad reducida');
+  if (bebeM || /beb[eé]|carrito/.test(t)) restr.push('logística de bebé' + (bebeM ? ` (${bebeM[1]} meses)` : ''));
+  const cifra = t.match(/(\d{2,5})\s*(€|eur)/);
+  if (cifra) restr.push(`presupuesto cerrado: ${cifra[1]} €`);
+  else if (/barat|low cost|economic|ajustado/.test(t)) restr.push('presupuesto bajo');
+  if (/sin masific|sin turist|sin gente|sin agobi|donde no haya nadie/.test(t)) restr.push('evitar masificación');
+  if (/mujer sola|seguridad/.test(t)) restr.push('seguridad para mujer sola');
+  if (/lgtb|gay/.test(t)) restr.push('ambiente LGTB abierto');
+  let destinoDirecto = null;
+  for (const d of DESTINOS) { const nD = norm(d.nombre.split(' (')[0]);
+    if (nD.length > 3 && t.includes(nD)) { destinoDirecto = d.id; break; } }
+  return { frase, duracion_dias: dur, mes, compania: comp, restricciones_viaje: restr, destinoDirecto };
+}
+
+/* ============ ENTREVISTA ADAPTATIVA ============ */
+const PASOS = [
+  { id:'nombre', tipo:'texto', ph:'Tu nombre…',
+    di: () => '¡Hola! Soy Brújula 🧭 Voy a hacerte unas preguntas rápidas — distintas según lo que me cuentes — para conocerte de verdad. ¿Cómo te llamas?' },
+  { id:'ciudad', tipo:'texto', ph:'Tu ciudad…',
+    di: (a) => `Encantada, ${a.nombre}. ¿Desde qué ciudad sueles salir de viaje?`,
+    chips: ['Madrid','Barcelona','Valencia','Sevilla','Bilbao'] },
+  { id:'situacion', tipo:'chips', di: () => '¿Cuál se parece más a tu vida ahora mismo?',
+    ops: ['Voy a mi aire','En pareja','Familia con peques','Hijos ya mayores'] },
+  { id:'edades', tipo:'chips', cond: (a) => a.situacion === 'Familia con peques',
+    di: () => 'Peques a bordo, entonces. ¿Edades? (marca lo que aplique)', multi: true,
+    ops: ['Bebé (menos de 2)','De 3 a 8','De 9 a 14','Adolescentes'] },
+  { id:'deporte', tipo:'chips', di: (a) => `${a.nombre}, en tu semana normal, ¿cuánto deporte haces?`,
+    ops: ['Casi nada','1-2 veces','3-4 veces','Soy de entrenar a diario'] },
+  { id:'deporteTipo', tipo:'chips', cond: (a) => /3-4|diario/.test(a.deporte),
+    di: () => 'Se nota que te mueves 💪 ¿Qué es lo tuyo?', multi: true,
+    ops: ['Correr / trail','Bici','Monte y montaña','Agua (surf, kayak, buceo)','Gimnasio'] },
+  { id:'reto', tipo:'chips', cond: (a) => /trail|Monte/.test((a.deporteTipo ?? []).join(' ')),
+    di: () => '¿Y en viaje, una ruta dura de verdad (15+ km, desnivel serio) te apetece o mejor sin palizas?',
+    ops: ['Dame el reto','Mejor disfrutona'] },
+  { id:'domingo', tipo:'chips', di: () => 'Un domingo libre perfecto, sin planes previos, ¿a qué se parece?',
+    ops: ['Naturaleza y andar','Mercado y vermut','Museo o plan cultural','Sofá, serie y siesta','Resaca de una buena noche'] },
+  { id:'tira', tipo:'chips', multi: true, max: 4,
+    di: (a) => `Esto va cogiendo forma, ${a.nombre}. De todo esto, ¿qué te tira de verdad cuando viajas? (elige hasta 4)`,
+    ops: ['Naturaleza','Cultura y museos','Arquitectura y diseño','Gastronomía','Fiesta','Playa y mar','Montaña y aventura','Bienestar / spa','Fotografía','Artesanía y mercados','Vida local','Festivales y eventos'] },
+  { id:'comer', tipo:'chips', di: () => 'Comer fuera: ¿qué papel juega en tus viajes?',
+    ops: ['Es EL motivo del viaje','Me gusta probar de todo','Rico y barato','Como para vivir, sin más'] },
+  { id:'dieta', tipo:'chips', di: () => '¿Alguna forma de comer que deba tener siempre presente?',
+    ops: ['Ninguna en especial','Vegetariana/vegana','Sin cerdo / halal'] },
+  { id:'masas', tipo:'chips', di: () => 'Última de carácter: las multitudes…',
+    ops: ['Las evito siempre','Depende del plan','Si hay ambiente, bienvenidas'] },
+  { id:'ritmoV', tipo:'chips', di: () => 'En viaje, ¿qué relación tienes con el despertador?',
+    ops: ['Madrugo y aprovecho el día','Sin madrugones, gracias','Según el plan que haya'] },
+  { id:'presu', tipo:'chips', di: (a) => `¿Y de presupuesto por persona y día (sin vuelos), ${a.nombre}?`,
+    ops: ['Menos de 60 €','60-100 €','100-180 €','Más de 180 €'] },
+  { id:'presuCerrado', tipo:'chips', cond: (a) => a.presu === 'Menos de 60 €',
+    di: () => '¿Ese presupuesto es orientativo o cerrado-cerrado?',
+    ops: ['Orientativo','Cerrado: ni un euro más'] },
+  { id:'duras', tipo:'chips', multi: true,
+    di: () => '¿Algo innegociable que deba filtrar SIEMPRE? (puedes marcar varias)',
+    ops: ['Accesibilidad en silla de ruedas','Viajo sola: seguridad primero','Destino LGTB-friendly sí o sí','Ninguna'] },
+  { id:'odios', tipo:'texto', ph:'Ej.: colas, madrugar, conducir, resorts…', opcional: true,
+    di: (a) => `Una en negativo, ${a.nombre}: ¿algo que ODIES en un viaje? Lo filtro para siempre.` },
+  { id:'viajes', tipo:'texto', ph:'Ej.: Uganda, Menorca, Roma…', opcional: true,
+    di: (a) => `Ya casi está. ¿Qué 2-3 viajes te han marcado más, ${a.nombre}? Así no te propongo lo que ya conoces (puedes saltarlo).` },
+];
+function construirPerfil(a) {
+  const compMap = { 'Voy a mi aire': ['solo'], 'En pareja': ['pareja'], 'Familia con peques': ['familia con niños'], 'Hijos ya mayores': ['pareja'] };
+  const restr = [];
+  const edades = a.edades ?? [];
+  if (edades.some((e) => /Bebé/.test(e))) restr.push('viajan con bebé: logística fácil obligatoria, todo apto para carrito');
+  if (a.presuCerrado === 'Cerrado: ni un euro más') restr.push('presupuesto cerrado e innegociable');
+  if (a.ritmoV === 'Sin madrugones, gracias') restr.push('sin madrugar');
+  if (a.odios) restr.push('odia: ' + a.odios);
+  for (const d of a.duras ?? []) {
+    if (/silla/.test(d)) restr.push('accesibilidad completa en silla de ruedas');
+    if (/sola/.test(d)) restr.push('viaja sola: la seguridad importa');
+    if (/LGTB/.test(d)) restr.push('destinos LGTB-friendly: criterio duro');
+  }
+  const presuMap = { 'Menos de 60 €': ['bajo',[35,60]], '60-100 €': ['medio',[60,100]], '100-180 €': ['medio-alto',[100,180]], 'Más de 180 €': ['alto',[180,350]] };
+  const [nivel, rango] = presuMap[a.presu] ?? ['medio',[60,100]];
+  const actMap = { 'Casi nada': 'baja', '1-2 veces': 'media', '3-4 veces': 'alta', 'Soy de entrenar a diario': 'muy alta' };
+  const gastroMap = { 'Es EL motivo del viaje': ['sibarita','producto','reservas'], 'Me gusta probar de todo': ['local','probar de todo','curiosidad'], 'Rico y barato': ['barato','local','abundante'], 'Como para vivir, sin más': ['sencilla'] };
+  const gastro = [...(gastroMap[a.comer] ?? ['local'])];
+  if (a.dieta === 'Vegetariana/vegana') gastro.push('vegana: opciones reales necesarias');
+  if (a.dieta === 'Sin cerdo / halal') gastro.push('sin cerdo / halal');
+  const masasMap = { 'Las evito siempre': 'evita radicalmente las masificaciones', 'Depende del plan': 'mixto', 'Si hay ambiente, bienvenidas': 'busca ambiente, las multitudes con plan no le asustan' };
+  const temperamento = /evito/i.test(a.masas ?? '') && /Naturaleza|Sofá/.test(a.domingo ?? '') ? 'tranquilo'
+    : /Fiesta|Resaca/.test([a.domingo, ...(a.tira ?? [])].join(' ')) ? 'aventurero-social' : 'mixto';
+  const viajes = (a.viajes ?? '').split(/[,;·]| y /).map((x) => x.trim()).filter((x) => x.length > 2)
+    .map((destino) => ({ destino, valoracion: 4 }));
+  return {
+    nombre: a.nombre || 'viajero', ciudad_origen: a.ciudad || '',
+    situacion_vital: a.situacion, companias: compMap[a.situacion] ?? ['solo'],
+    vida_cotidiana: { deporte_semanal: a.deporte, domingo_libre: a.domingo },
+    actividad_fisica: (actMap[a.deporte] ?? 'media') + (a.deporteTipo ? ' (' + a.deporteTipo.join(', ') + ')' : ''),
+    temperamento,
+    ritmo: (a.ritmoV === 'Sin madrugones, gracias' ? 'sin madrugar, ' : a.ritmoV === 'Madrugo y aprovecho el día' ? 'madrugador, ' : '') + (a.reto === 'Dame el reto' ? 'exigente: ruta dura bienvenida' : 'medio'),
+    presupuesto: { nivel, eur_persona_dia: rango, nota: a.presuCerrado === 'Cerrado: ni un euro más' ? 'presupuesto cerrado' : '' },
+    alojamiento: { valores: [a.comer === 'Es EL motivo del viaje' ? 'con alma o boutique' : (a.presu === 'Menos de 60 €' ? 'barato y limpio: hostal, pensión, apartamento' : 'con alma, autentico')], evita: [] },
+    gastronomia: gastro, masificacion: masasMap[a.masas] ?? 'mixto',
+    intereses: [...(a.tira ?? []), ...(a.deporteTipo ?? []), a.domingo].filter(Boolean),
+    restricciones: restr,
+    experiencia_viajera: { viajes_valorados: viajes },
+    flexibilidad_fechas: '',
+  };
+}
+
+/* ============ ESTADO Y NAVEGACIÓN ============ */
+let estado = {
+  perfil: JSON.parse(localStorage.getItem('brujula_perfil') ?? 'null'),
+  viaje: null, bolsas: null, ronda: 0, vistos: new Set(),
+  vista: 'inicio', destino: null, mods: new Set(), pila: [],
+};
+function ir(vista, empuja = true) {
+  if (empuja && estado.vista !== vista) estado.pila.push(estado.vista);
+  estado.vista = vista; pinta();
+}
+function atras() { estado.vista = estado.pila.pop() ?? 'inicio'; pinta(); }
+$('#atras').onclick = atras;
+$('#menu').onclick = () => {
+  if (confirm('¿Rehacer tu entrevista de perfil? (también puedes probar la app como una de nuestras 25 personas de prueba pulsando Cancelar y de nuevo ⋯)')) {
+    localStorage.removeItem('brujula_perfil'); estado = { ...estado, perfil: null, pila: [], vista: 'entrevista' }; pinta();
+  } else if (confirm('¿Entrar en modo demo con una persona de prueba?')) {
+    const nombres = B.personas.map((p, i) => `${i + 1}. ${p.nombre} — ${p.linea.slice(0, 50)}…`).join('\n');
+    const n = parseInt(prompt('Elige nº de persona:\n' + nombres) ?? '', 10);
+    const p = B.personas[n - 1];
+    if (p) { estado.perfil = { ...p.perfil, nombre: p.perfil.nombre }; localStorage.setItem('brujula_perfil', JSON.stringify(estado.perfil)); estado.pila = []; ir('inicio', false); }
+  }
+};
+
+/* ============ VISTA: ENTREVISTA ============ */
+function vistaEntrevista() {
+  const cont = $('#app');
+  cont.innerHTML = '<div class="chat vista" id="chat"></div>';
+  const chat = $('#chat');
+  const respuestas = {};
+  let i = -1;
+  const burbuja = (texto, mia) => { const b = document.createElement('div');
+    b.className = 'burbuja ' + (mia ? 'yo' : 'ia'); b.textContent = texto; chat.appendChild(b);
+    window.scrollTo(0, document.body.scrollHeight); };
+  const siguiente = () => {
+    i++;
+    while (i < PASOS.length && PASOS[i].cond && !PASOS[i].cond(respuestas)) i++;
+    if (i >= PASOS.length) return termina();
+    const p = PASOS[i];
+    const esc = document.createElement('div'); esc.className = 'escribiendo'; esc.textContent = '•••'; chat.appendChild(esc);
+    window.scrollTo(0, document.body.scrollHeight);
+    setTimeout(() => { esc.remove(); burbuja(p.di(respuestas), false); pinta_input(p); }, 420);
+  };
+  const pinta_input = (p) => {
+    const zona = document.createElement('div'); chat.appendChild(zona);
+    if (p.tipo === 'chips') {
+      const sel = new Set();
+      const div = document.createElement('div'); div.className = 'opciones';
+      for (const op of p.ops) { const b = document.createElement('button'); b.textContent = op;
+        b.onclick = () => {
+          if (p.multi) { sel.has(op) ? (sel.delete(op), b.classList.remove('sel')) : (sel.size < (p.max ?? 9) && (sel.add(op), b.classList.add('sel'))); }
+          else { respuestas[p.id] = op; zona.remove(); burbuja(op, true); siguiente(); } };
+        div.appendChild(b); }
+      zona.appendChild(div);
+      if (p.multi) { const ok = document.createElement('button'); ok.className = 'cta'; ok.style.marginTop = '4px'; ok.textContent = 'Listo →';
+        ok.onclick = () => { respuestas[p.id] = [...sel]; zona.remove(); burbuja([...sel].join(', ') || '—', true); siguiente(); };
+        zona.appendChild(ok); }
+    } else {
+      if (p.chips) { const div = document.createElement('div'); div.className = 'opciones';
+        for (const c of p.chips) { const b = document.createElement('button'); b.textContent = c;
+          b.onclick = () => { respuestas[p.id] = c; zona.remove(); burbuja(c, true); siguiente(); }; div.appendChild(b); }
+        zona.appendChild(div); }
+      const campo = document.createElement('div'); campo.className = 'campo';
+      campo.innerHTML = `<input placeholder="${p.ph ?? ''}"><button>OK</button>`;
+      const inp = campo.querySelector('input');
+      const manda = () => { const v = inp.value.trim(); if (!v && !p.opcional) return;
+        respuestas[p.id] = v; zona.remove(); burbuja(v || '(lo salto)', true); siguiente(); };
+      campo.querySelector('button').onclick = manda;
+      inp.onkeydown = (e) => { if (e.key === 'Enter') manda(); };
+      zona.appendChild(campo);
+      if (p.opcional) { const s = document.createElement('button'); s.className = 'saltar'; s.textContent = 'Saltar';
+        s.onclick = () => { respuestas[p.id] = ''; zona.remove(); burbuja('(lo salto)', true); siguiente(); }; zona.appendChild(s); }
+      inp.focus();
+    }
+    window.scrollTo(0, document.body.scrollHeight);
+  };
+  const termina = () => {
+    estado.perfil = construirPerfil(respuestas);
+    localStorage.setItem('brujula_perfil', JSON.stringify(estado.perfil));
+    burbuja(`Perfecto, ${estado.perfil.nombre}. Ya te conozco lo suficiente para empezar — y seguiré aprendiendo con cada viaje. Vamos a por el primero 🧭`, false);
+    setTimeout(() => { estado.pila = []; ir('inicio', false); }, 1100);
+  };
+  siguiente();
+}
+
+/* ============ VISTA: INICIO (barra de texto) ============ */
+function vistaInicio() {
+  const pf = estado.perfil;
+  $('#app').innerHTML = `<div class="vista">
+    <p class="saludo">Hola, <em>${esc(pf.nombre)}</em></p>
+    <p class="sub">Cuéntame el viaje que tienes en la cabeza — aunque solo sea una idea a medias.</p>
+    <div class="barra"><input id="frase" placeholder="Ej.: una semana en septiembre con mi pareja…" autocomplete="off"><button id="manda" aria-label="Buscar">→</button></div>
+    <div class="sugerencias">
+      <button data-f="Sorpréndeme: tengo la mente en blanco">✨ Sorpréndeme</button>
+      <button data-f="un fin de semana con mi pareja, sin masificaciones">En pareja, un finde</button>
+      <button data-f="una semana en agosto con amigos, barato">Con amigos en agosto</button>
+      <button data-f="5 días yo solo, desconectar de verdad">Solo, a desconectar</button>
+    </div>
+    <button class="enlace-manual" id="manual">📍 Ya tengo destino — organízamelo</button>
+    <p class="pie">Un valor seguro + sorpresas de verdad. Todo verificado con fuentes.<br>Y seguimos verificando destinos nuevos cada semana.</p>
+  </div>`;
+  const lanza = (f) => {
+    const v = parsearFrase(f || 'Sorpréndeme');
+    estado.viaje = v;
+    if (v.destinoDirecto) { estado.destino = v.destinoDirecto; ir('destino'); return; }
+    estado.bolsas = calcularBolsas(estado.perfil, v);
+    estado.ronda = 0; estado.vistos = new Set();
+    ir('feed');
+  };
+  $('#manda').onclick = () => lanza($('#frase').value.trim());
+  $('#frase').onkeydown = (e) => { if (e.key === 'Enter') lanza($('#frase').value.trim()); };
+  document.querySelectorAll('.sugerencias button').forEach((b) => { b.onclick = () => { $('#frase').value = b.dataset.f; lanza(b.dataset.f); }; });
+  $('#manual').onclick = () => ir('manual');
+}
+
+/* ============ VISTA: FEED con refrescos ============ */
+function loteActual() {
+  const { seguros, sorpresas } = estado.bolsas;
+  const segurosLibres = seguros.filter((c) => !estado.vistos.has(c.d.id));
+  const sorpresasLibres = sorpresas.filter((c) => !estado.vistos.has(c.d.id));
+  const lote = [];
+  if (segurosLibres[0]) lote.push({ ...segurosLibres[0], tipo: 'seguro' });
+  for (const s of sorpresasLibres) { if (lote.length >= 3) break; if (!lote.some((x) => x.d.id === s.d.id)) lote.push({ ...s, tipo: 'sorpresa' }); }
+  for (const s of segurosLibres.slice(1)) { if (lote.length >= 3) break; if (!lote.some((x) => x.d.id === s.d.id)) lote.push({ ...s, tipo: 'seguro' }); }
+  return lote;
+}
+function vistaFeed() {
+  const lote = loteActual();
+  const quedanTras = estado.bolsas.seguros.concat(estado.bolsas.sorpresas)
+    .filter((c) => !estado.vistos.has(c.d.id) && !lote.some((x) => x.d.id === c.d.id)).length;
+  let h = `<div class="vista"><p class="saludo">${estado.ronda === 0 ? 'Para ti' : 'Más para ti'}, <em>${esc(estado.perfil.nombre)}</em></p>`;
+  if (estado.viaje?.frase) h += `<div class="peticion"><b>Tu petición</b><q>${esc(estado.viaje.frase)}</q></div>`;
+  if (!lote.length) {
+    h += `<div class="aviso-deficit"><b>Te has recorrido todo lo que tenemos verificado para ti.</b> Antes que enseñarte relleno, lo dejamos aquí: estamos verificando destinos nuevos cada semana y te avisaremos. </div>
+    <button class="btn-secundario" id="reinicia">↺ Volver a ver las propuestas desde el principio</button>`;
+  }
+  for (const c of lote) {
+    const d = c.d;
+    h += `<article class="tarjeta" data-id="${d.id}">
+      <div class="hero" id="f-${d.id}"><div class="letra">${esc(d.nombre[0])}</div><div class="velo"></div>
+        <span class="badge ${c.tipo === 'seguro' ? 'seguro' : 'sorpresa'}">${c.tipo === 'seguro' ? 'VALOR SEGURO' : 'SORPRESA'}</span>
+        <span class="precio">${d.presupuesto.eur_persona_dia[0]}–${d.presupuesto.eur_persona_dia[1]} €/día</span><div class="titulo"><h2>${esc(d.nombre)}</h2><p>${esc(d.region)}, ${esc(d.pais)}</p></div></div>
+      <div class="cuerpo"><ul class="porques">${c.raz.slice(0, 3).map((q) => `<li>${esc(q)}</li>`).join('')}</ul>
+      ${c.hist ? '<p class="mini-nota">Ya lo conoces y te gustó: te lo ofrezco como valor seguro, no como descubrimiento.</p>' : ''}<div class="abrir"><small>${c.raz.slice(0,3).length} porqués con fuente</small><span>Ver destino →</span></div></div></article>`;
+  }
+  if (lote.length) {
+    h += quedanTras > 0
+      ? `<button class="btn-refresco" id="refresca">↻ No me convencen — enséñame otros ${Math.min(3, quedanTras)}</button>`
+      : `<div class="aviso-deficit"><div class="brujula-icono">🧭</div><h3>Hasta aquí lo verificado para ti</h3><p>Preferimos decírtelo a rellenar con humo: hay destinos nuevos en verificación ahora mismo.</p><span class="sello">✓ Solo mostramos lo verificado</span></div>`;
+  if (lote.length) h += `<div class="siguiente" aria-hidden="true"><div class="esbozo"><i></i><i></i><i></i></div></div><p class="verificando"><span class="punto"></span>Verificando nuevos destinos para ti…</p>`;
+  }
+  h += `<p class="pie">Cada porqué nace de un dato verificado con fuentes · Brújula ${esc(B.generado)}</p></div>`;
+  $('#app').innerHTML = h;
+  for (const c of lote) {
+    ponFoto('f-' + c.d.id, candidatosFoto(c.d.foto_wiki, 800));
+    document.querySelector(`[data-id="${c.d.id}"]`).onclick = () => { estado.destino = c.d.id; ir('destino'); };
+  }
+  const r = $('#refresca'); if (r) r.onclick = () => { lote.forEach((c) => estado.vistos.add(c.d.id)); estado.ronda++; vistaFeed(); window.scrollTo(0, 0); };
+  const re = $('#reinicia'); if (re) re.onclick = () => { estado.vistos = new Set(); estado.ronda = 0; vistaFeed(); };
+  document.querySelectorAll('.tarjeta').forEach((el, i) => setTimeout(() => el.classList.add('visible'), 60 + i * 100));
+}
+
+/* ============ VISTA: DESTINO ============ */
+function vistaDestino() {
+  const d = B.destinos[estado.destino];
+  const bols = estado.bolsas ?? calcularBolsas(estado.perfil, estado.viaje);
+  const c = [...bols.seguros, ...bols.sorpresas].find((x) => x.d.id === d.id);
+  let h = `<div class="vista"><article class="tarjeta" style="cursor:default;margin-top:2px">
+    <div class="hero hero-d" id="fd-${d.id}"><div class="letra">${esc(d.nombre[0])}</div><div class="velo"></div>
+      <div class="titulo"><h2>${esc(d.nombre)}</h2><p>${esc(d.region)}, ${esc(d.pais)}</p><div class="datos"><span>${d.presupuesto.eur_persona_dia[0]}–${d.presupuesto.eur_persona_dia[1]} €/día</span>${estado.viaje?.duracion_dias ? `<span>${estado.viaje.duracion_dias} días</span>` : ''}${estado.viaje?.mes ? `<span>${MESES[estado.viaje.mes-1][0].toUpperCase()+MESES[estado.viaje.mes-1].slice(1)} ✓</span>` : ''}</div></div></div></article>
+    <div class="seccion"><p class="editorial">${esc(d.resumen_editorial)}</p></div>`;
+  if (c) h += `<div class="seccion"><h3>Por qué a ti</h3><ul class="porques">${c.raz.slice(0, 4).map((q) => `<li>${esc(q)}</li>`).join('')}</ul></div>`;
+  h += `<div class="seccion"><h3>Cuándo ir</h3><div class="meses">${Object.entries(d.clima_por_mes).map(([m, cl]) =>
+    `<div class="mes ${cl.valoracion === 'ideal' ? 'ideal' : cl.valoracion === 'buena' ? 'buena' : ''}${estado.viaje?.mes === +m ? ' pedido' : ''}"><i></i>${MES3[m - 1]}</div>`).join('')}</div><div class="leyenda"><span class="l-ideal"><i></i>Ideal</span><span class="l-buena"><i></i>Buena</span>${estado.viaje?.mes ? '<span class="l-pedido"><i></i>Tu fecha</span>' : ''}</div></div>`;
+  let nf = 0; const fotosPend = [];
+  for (const g of ['rutas','gastronomia','cultura_ocio','playas','alojamientos']) {
+    const els = verif(d[g]); if (!els.length) continue;
+    h += `<div class="seccion"><h3>${TITSEC[g]}</h3>`;
+    for (const el of els) {
+      const idF = 'fe' + (nf++);
+      const dato = el.distancia_km ? `${el.distancia_km} km · ${el.dificultad}`
+        : el.rango_precio_eur ? `${el.rango_precio_eur[0]}-${el.rango_precio_eur[1]} €`
+        : el.rango_precio_noche_eur ? `${el.rango_precio_noche_eur[0]}-${el.rango_precio_noche_eur[1]} €/noche` : '';
+      h += `<div class="fila"><div class="foto" id="${idF}"><span>${ICONO[g]}</span></div>
+        <div class="info"><b>${esc(el.nombre)}</b><small>${esc((el.descripcion ?? '').slice(0, 105))}…</small>
+        ${dato ? `<span class="dato">${esc(dato)}</span>` : ''}</div></div>`;
+      fotosPend.push([idF, el]);
+    }
+    h += '</div>';
+  }
+  h += `<button class="cta" id="monta">Móntame el viaje día a día →</button>
+  <div class="verificado">✓ Todo lo que ves está verificado con fuentes y fecha. Lo no verificado no se muestra.</div></div>`;
+  $('#app').innerHTML = h;
+  ponFoto('fd-' + d.id, candidatosFoto(d.foto_wiki, 900));
+  for (const [idF, el] of fotosPend) ponFoto(idF, candidatosElemento(el, d, 300));
+  $('#monta').onclick = () => { estado.mods = new Set(); ir('plan'); };
+}
+
+/* ============ VISTA: PLAN (con regeneración en vivo) ============ */
+function vistaPlan() {
+  const d = B.destinos[estado.destino];
+  const pf = estado.perfil;
+  const carta = construirCarta(pf, estado.viaje, d, new Set([...estado.mods].flatMap((m) => B.tax.regeneraciones[m]?.boost_ambitos ?? [])));
+  const { dias, cubiertos } = construirDias(pf, estado.viaje, d, carta, estado.mods);
+  const nD = estado.viaje?.duracion_dias ?? 5;
+  const REGS = ['mas-gastronomico','mas-naturaleza','mas-cultura','mas-aventura','mas-fiesta','mas-tranquilo','sin-madrugar','mas-barato'];
+  let h = `<div class="vista"><p class="saludo" style="font-size:24px">${esc(d.nombre)}, <em>día a día</em></p>
+    <div class="chips">${cubiertos.map((a) => `<span class="chip">${esc(B.tax.ambitos[a] ?? a)}</span>`).join('')}</div>
+    <div class="regen">${REGS.map((r) => `<button data-r="${r}" class="${estado.mods.has(r) ? 'sel' : ''}">${esc(B.tax.regeneraciones[r]?.etiqueta ?? r)}</button>`).join('')}</div>`;
+  for (const dia of dias) {
+    h += `<div class="dia"><div class="cab"><span class="num">Día ${dia.n}</span><span class="amb">${esc(dia.amb)}</span></div>`;
+    for (const [b, v] of Object.entries(dia.bl)) h += `<div class="bloque"><span class="h">${b === 'manana' ? 'Mañana' : b === 'tarde' ? 'Tarde' : 'Noche'}</span><span class="p">${esc(v)}</span></div>`;
+    h += '</div>';
+  }
+  h += `<div class="tarjeton"><span class="sobre">TU TARJETA · PARA COMPARTIR</span>
+    <h4>${esc(d.nombre)} · ${nD} días</h4><p>Un viaje a medida de ${esc(pf.nombre)}</p>
+    <ul>${[carta.rutas[0] && 'Ruta: ' + carta.rutas[0].nombre, carta.restaurantes[0] && 'Mesa: ' + carta.restaurantes[0].nombre,
+           carta.actividades[0] && 'Plan: ' + carta.actividades[0].nombre, carta.alojamientos[0] && 'Cama: ' + carta.alojamientos[0].nombre]
+      .filter(Boolean).map((l) => `<li>${esc(l)}</li>`).join('')}</ul></div>
+  <button class="btn-secundario" id="comparte">Compartir mi viaje</button>
+  <p class="pie">Toca los botones de arriba para regenerar el plan a tu gusto, al instante.</p></div>`;
+  $('#app').innerHTML = h;
+  document.querySelectorAll('.regen button').forEach((b) => { b.onclick = () => {
+    const r = b.dataset.r; estado.mods.has(r) ? estado.mods.delete(r) : estado.mods.add(r); vistaPlan(); }; });
+  $('#comparte').onclick = () => {
+    const texto = `${d.nombre} · ${nD} días — mi viaje con Brújula 🧭\n` +
+      [carta.rutas[0] && '· ' + carta.rutas[0].nombre, carta.restaurantes[0] && '· ' + carta.restaurantes[0].nombre].filter(Boolean).join('\n');
+    if (navigator.share) navigator.share({ title: 'Mi viaje Brújula', text: texto }).catch(() => {});
+    else { navigator.clipboard?.writeText(texto); alert('Copiado al portapapeles 📋'); }
+  };
+}
+
+/* ============ VISTA: DESTINO MANUAL ============ */
+function vistaManual() {
+  $('#app').innerHTML = `<div class="vista">
+    <p class="saludo">Ya tienes <em>destino</em></p>
+    <p class="sub">Dime dónde vas (aunque lo tengas ya reservado) y te organizo el viaje según tu perfil.</p>
+    <div class="barra"><input id="busca" placeholder="Ej.: Menorca, Fez, Georgia…" autocomplete="off"><button id="lupa">→</button></div>
+    <div id="resultados"></div></div>`;
+  const pinta_res = () => {
+    const q = norm($('#busca').value.trim());
+    const cont = $('#resultados');
+    if (q.length < 2) { cont.innerHTML = ''; return; }
+    const hits = DESTINOS.filter((d) => norm(d.nombre + ' ' + d.region + ' ' + d.pais + ' ' + d.slug).includes(q)).slice(0, 6);
+    if (!hits.length) {
+      cont.innerHTML = `<div class="aviso-deficit"><b>«${esc($('#busca').value)}» aún no está en nuestro catálogo verificado.</b>
+        Solo recomendamos lo que hemos comprobado con fuentes — nada de rellenar con datos inventados.
+        Lo apuntamos a la cola de verificación y te avisaremos cuando esté.</div>
+        <button class="btn-secundario" id="apunta">Avisadme cuando esté verificado</button>`;
+      const sug = DESTINOS.slice().sort(() => .5 - Math.random()).slice(0, 4);
+      cont.innerHTML += '<p class="sub" style="margin-top:14px">¿Buscabas uno de estos?</p><div class="opciones">' +
+        sug.map((d) => `<button data-s="${d.id}">${esc(d.nombre)}</button>`).join('') + '</div>';
+      cont.querySelectorAll('[data-s]').forEach((b) => { b.onclick = () => { estado.viaje = estado.viaje ?? parsearFrase(''); estado.destino = b.dataset.s; ir('destino'); }; });
+      $('#apunta').onclick = (e) => {
+        const cola = JSON.parse(localStorage.getItem('brujula_solicitados') ?? '[]');
+        cola.push({ destino: $('#busca').value.trim(), fecha: new Date().toISOString().slice(0, 10) });
+        localStorage.setItem('brujula_solicitados', JSON.stringify(cola));
+        e.target.textContent = '✓ Apuntado — te avisaremos'; e.target.disabled = true;
+      };
+      return;
+    }
+    cont.innerHTML = hits.map((d) => `<div class="resultado" data-id="${d.id}">
+      <div class="mini" id="m-${d.id}">${esc(d.nombre[0])}</div>
+      <div class="info"><b>${esc(d.nombre)}</b><small>${esc(d.region)}, ${esc(d.pais)}</small></div></div>`).join('');
+    cont.scrollIntoView({ block: 'nearest' });
+    hits.forEach((d) => { ponFoto('m-' + d.id, candidatosFoto(d.foto_wiki, 200));
+      cont.querySelector(`[data-id="${d.id}"]`).onclick = () => {
+        estado.viaje = estado.viaje ?? parsearFrase(''); estado.destino = d.id; ir('destino'); }; });
+  };
+  $('#busca').oninput = pinta_res;
+  $('#lupa').onclick = pinta_res;
+  $('#busca').focus();
+}
+
+/* ============ PINTOR ============ */
+function pinta() {
+  $('#atras').classList.toggle('oculto', estado.vista === 'inicio' || estado.vista === 'entrevista');
+  window.scrollTo(0, 0);
+  if (!estado.perfil && estado.vista !== 'entrevista') { estado.vista = 'entrevista'; }
+  ({ entrevista: vistaEntrevista, inicio: vistaInicio, feed: vistaFeed, destino: vistaDestino, plan: vistaPlan, manual: vistaManual })[estado.vista]();
+  document.querySelectorAll(".tarjeta").forEach((el, i) => setTimeout(() => el.classList.add("visible"), 80 + i * 110));
+}
+pinta();
+</script>
+</body>
+</html>

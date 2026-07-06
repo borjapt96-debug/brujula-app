@@ -1,0 +1,14 @@
+{
+  "name": "Brújula — 3 destinos para ti",
+  "short_name": "Brújula",
+  "description": "Descubrimiento y planificación de viajes: un valor seguro y dos sorpresas de verdad, todo verificado.",
+  "lang": "es",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#FAF9F5",
+  "theme_color": "#085041",
+  "icons": [
+    { "src": "icono.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" },
+    { "src": "icono.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "maskable" }
+  ]
+}
