@@ -56,6 +56,21 @@
   .sugerencias::-webkit-scrollbar{display:none}
   .sugerencias button{flex:none;border:1px solid var(--borde);background:var(--carta);color:var(--tinta-2);font-size:12.5px;font-weight:500;padding:10px 15px;border-radius:999px;box-shadow:0 1px 2px rgba(4,52,44,.04)}
   .enlace-manual{display:block;text-align:center;margin:16px 0 6px;font-size:13.5px;color:var(--verde-600);font-weight:600;background:none;border:none;width:100%}
+  .enlace-instalar{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;margin:14px 0 2px;padding:14px;
+                   border:1.5px solid var(--verde-200);border-radius:16px;background:var(--verde-50);color:var(--verde-800);font-size:14px;font-weight:600}
+  .enlace-instalar span{font-size:16px}
+  .modal-fondo{position:fixed;inset:0;z-index:50;background:rgba(4,52,44,.5);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);
+               display:flex;align-items:flex-end;justify-content:center;animation:aparece .2s ease}
+  .modal-caja{background:var(--papel);width:100%;max-width:390px;border-radius:24px 24px 0 0;padding:26px 22px calc(22px + env(safe-area-inset-bottom));
+              box-shadow:0 -12px 40px -10px rgba(4,52,44,.4)}
+  .modal-caja h3{font-family:var(--serif);font-weight:500;font-size:22px;color:var(--verde-950);line-height:1.2;margin-bottom:14px}
+  .pasos{list-style:none;counter-reset:p;display:flex;flex-direction:column;gap:12px;margin:0 0 6px}
+  .pasos li{counter-increment:p;position:relative;padding-left:38px;font-size:14px;line-height:1.5;color:var(--tinta-2)}
+  .pasos li::before{content:counter(p);position:absolute;left:0;top:-1px;width:26px;height:26px;border-radius:50%;
+                    background:var(--verde-800);color:#fff;font-size:13px;font-weight:700;display:flex;align-items:center;justify-content:center}
+  .pasos li b{color:var(--tinta)}
+  .modal-nota{font-size:12.5px;color:var(--tinta-3);line-height:1.6;margin:14px 0 4px}
+  .modal-caja .cta{margin-top:16px}
 
   .chat{display:flex;flex-direction:column;gap:10px;padding-bottom:16px}
   .burbuja{max-width:86%;padding:12px 16px;border-radius:20px;font-size:14.5px;line-height:1.5;animation:aparece .25s ease}
@@ -173,6 +188,18 @@
   .regen button{flex:none;border:1px solid var(--borde);background:var(--carta);color:var(--tinta-2);font-size:12.5px;font-weight:500;
                 padding:9px 15px;border-radius:999px;box-shadow:0 1px 2px rgba(4,52,44,.04);transition:background .2s,color .2s,border-color .2s}
   .regen button.sel{background:var(--verde-950);border-color:var(--verde-950);color:#fff}
+  .dias-caja{margin:18px 0 2px}
+  .dias-caja>b{font-size:13.5px;font-weight:600;color:var(--verde-950)}
+  .dias-caja>small{display:block;font-size:12px;color:var(--tinta-2);margin:3px 0 10px;line-height:1.5}
+  .dias-caja>small b{color:var(--verde-600)}
+  .dias-sel{display:flex;gap:7px;overflow-x:auto;margin:0 -20px;padding:2px 20px 8px;scrollbar-width:none}
+  .dias-sel::-webkit-scrollbar{display:none}
+  .dias-sel button{flex:none;min-width:46px;padding:8px 6px;border-radius:14px;border:1px solid var(--borde);background:var(--carta);
+                   font-size:14.5px;font-weight:600;color:var(--tinta-2);box-shadow:0 1px 2px rgba(4,52,44,.04);line-height:1.15}
+  .dias-sel button i{display:block;font-style:normal;font-size:8.5px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--verde-600)}
+  .dias-sel button.rec{border-color:var(--verde-200)}
+  .dias-sel button.sel{background:var(--verde-800);border-color:var(--verde-800);color:#fff}
+  .dias-sel button.sel i{color:var(--verde-200)}
   .dia{background:var(--carta);border:1px solid var(--borde);border-radius:20px;padding:16px 18px;margin:12px 0;box-shadow:0 1px 2px rgba(4,52,44,.04)}
   .dia .cab{display:flex;align-items:baseline;gap:10px;margin-bottom:10px;padding-bottom:10px;border-bottom:1px solid var(--borde)}
   .dia .num{font-family:var(--serif);font-size:20px;font-weight:600;color:var(--verde-800)}
@@ -211,6 +238,13 @@
 <script>
 'use strict';
 const B = window.BRUJULA;
+
+/* ============ CONFIG ============ */
+const CONFIG = {
+  // Endpoint de recogida de datos (Formspree, Google Apps Script, Cloudflare Worker… cualquiera que acepte POST JSON).
+  // Mientras esté vacío, los datos se guardan en cola local y se envían solos en cuanto pegues aquí la URL.
+  recogida: '',
+};
 const $ = (s) => document.querySelector(s);
 const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const norm = (s) => String(s ?? '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
@@ -220,6 +254,68 @@ const ICONO = { rutas:'🥾', gastronomia:'🍽️', alojamientos:'🛏️', cul
 const TITSEC = { rutas:'Rutas', gastronomia:'Dónde comer', cultura_ocio:'Planes', playas:'Playas y calas', alojamientos:'Dónde dormir' };
 const DESTINOS = Object.values(B.destinos);
 const verif = (arr) => (arr ?? []).filter((e) => e.verificacion?.estado === 'verificado');
+
+/* ============ INSTALAR APP (PWA: Android/Chrome nativo · iOS instrucciones) ============ */
+if ('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').catch(() => {});
+let promptInstalar = null;
+const esIOS = /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+const yaInstalada = window.matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
+window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); promptInstalar = e; document.body.classList.add('instalable'); });
+window.addEventListener('appinstalled', () => { promptInstalar = null; document.body.classList.remove('instalable'); });
+async function instalarApp() {
+  if (promptInstalar) {                      // Android/Chrome/Edge: instalación nativa en un toque
+    promptInstalar.prompt();
+    try { await promptInstalar.userChoice; } catch {}
+    promptInstalar = null; return;
+  }
+  // iOS Safari (sin API de instalación) y resto: instrucciones claras
+  const pasos = esIOS
+    ? ['Pulsa el botón <b>Compartir</b> ⬆️ de Safari (abajo en el iPhone, arriba en el iPad).',
+       'Baja y elige <b>«Añadir a pantalla de inicio»</b>.',
+       'Pulsa <b>«Añadir»</b> arriba a la derecha. ¡Listo, ya tienes Brújula como app!']
+    : ['Abre el menú <b>⋮</b> de tu navegador (Chrome/Edge).',
+       'Elige <b>«Instalar aplicación»</b> o <b>«Añadir a pantalla de inicio»</b>.',
+       'Confirma. Brújula quedará como una app más en tu móvil.'];
+  abrirModal(`<h3>Instala Brújula ${esIOS ? 'en tu iPhone/iPad' : 'en tu móvil'}</h3>
+    <ol class="pasos">${pasos.map((p) => `<li>${p}</li>`).join('')}</ol>
+    <p class="modal-nota">Funciona sin conexión y se abre a pantalla completa, como cualquier app — pero sin pasar por ninguna tienda.</p>`);
+}
+function abrirModal(html) {
+  const prev = document.getElementById('modal'); if (prev) prev.remove();
+  const m = document.createElement('div'); m.id = 'modal'; m.className = 'modal-fondo';
+  m.innerHTML = `<div class="modal-caja">${html}<button class="cta" id="modal-ok">Entendido</button></div>`;
+  m.onclick = (e) => { if (e.target === m) m.remove(); };
+  document.body.appendChild(m);
+  m.querySelector('#modal-ok').onclick = () => m.remove();
+}
+
+/* ============ RECOGIDA AUTOMÁTICA DE DATOS (sin correo: se envían solos) ============ */
+// Todo lo que el usuario genera (perfil al terminar la entrevista, solicitudes de destino) se captura
+// automáticamente. Si aún no hay endpoint, queda en cola local y se reintenta en cada arranque.
+function recoger(tipo, datos) {
+  const cola = JSON.parse(localStorage.getItem('brujula_envios') ?? '[]');
+  cola.push({ tipo, datos, fecha: new Date().toISOString(), id: (crypto.randomUUID?.() ?? String(Date.now() + Math.random())), ua: navigator.userAgent, ref: location.href });
+  localStorage.setItem('brujula_envios', JSON.stringify(cola.slice(-200)));
+  enviarPendientes();
+}
+let enviando = false;
+async function enviarPendientes() {
+  const url = CONFIG.recogida;
+  if (!url || enviando) return;
+  enviando = true;
+  try {
+    let cola = JSON.parse(localStorage.getItem('brujula_envios') ?? '[]');
+    const quedan = [];
+    for (const ev of cola) {
+      try {
+        const r = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' }, body: JSON.stringify(ev) });
+        if (!r.ok) quedan.push(ev);
+      } catch { quedan.push(ev); }
+    }
+    localStorage.setItem('brujula_envios', JSON.stringify(quedan));
+  } finally { enviando = false; }
+}
+enviarPendientes();  // reintenta la cola en cada arranque
 
 /* ============ FOTOS: Wikipedia → Commons → respaldo (nunca imagen rota) ============ */
 const cacheFotos = {};
@@ -429,7 +525,16 @@ function calcularBolsas(pf, viaje) {
 }
 
 /* ============ EXPERIENCIA-LITE (gemelo de motor/experiencia.mjs) ============ */
-function construirCarta(pf, viaje, d, boost) {
+// Días recomendados (decisión #27): los que se llenan con lo VERIFICADO sin repetir plan
+// y con una mesa DISTINTA cada día. Día 1 sin plan (llegada), último 1 plan, intermedios 2.
+function diasRecomendados(d) {
+  const E = B.reglas.estancia ?? { dias_min: 2, dias_max_recomendable: 7 };
+  const planes = verif(d.rutas).length + verif(d.cultura_ocio).length + verif(d.playas).length;
+  const mesas = verif(d.gastronomia).length;
+  const porPlanes = Math.floor(Math.max(planes - 1, 0) / 2) + 2;
+  return Math.max(E.dias_min, Math.min(porPlanes, mesas, E.dias_max_recomendable));
+}
+function construirCarta(pf, viaje, d, boost, nDias) {
   const restr = norm(JSON.stringify([viaje?.restricciones_viaje, pf.restricciones]));
   const conBebe = /bebe|carrito/.test(restr);
   const sinCuestas = /cuesta|movilidad|silla/.test(restr);
@@ -441,10 +546,12 @@ function construirCarta(pf, viaje, d, boost) {
   if (conBebe) rutas = rutas.filter((r) => r.apta_carrito || r.dificultad === 'facil');
   const rutasSel = rutas.slice(0, 2);
   const pMax = pf.presupuesto?.eur_persona_dia?.[1] ?? Infinity;
+  // La carta crece con la estancia: una mesa distinta por día de viaje (decisión #27)
+  const nMesas = Math.min(B.reglas.carta.restaurantes.max, Math.max(B.reglas.carta.restaurantes.min, nDias ?? B.reglas.carta.restaurantes.min));
   const rest = verif(d.gastronomia).map((g) => { let p = bonus(g);
     if ((g.rango_precio_eur?.[0] ?? 0) > pMax * 1.5) p -= 2;
     if (boost.has('_barato')) p += (g.rango_precio_eur?.[0] ?? 0) <= 25 ? 2 : -1;
-    return { g, p }; }).sort((a, b) => b.p - a.p).slice(0, 6).map((x) => x.g);
+    return { g, p }; }).sort((a, b) => b.p - a.p).slice(0, nMesas).map((x) => x.g);
   let aloj = verif(d.alojamientos);
   if (conBebe) aloj = aloj.filter((a) => a.apto_bebes).concat(aloj.filter((a) => !a.apto_bebes));
   const alojSel = aloj.slice(0, 3);
@@ -452,8 +559,7 @@ function construirCarta(pf, viaje, d, boost) {
     .map((a) => ({ a, p: bonus(a) * 2 })).sort((x, y) => y.p - x.p).slice(0, 5).map((x) => x.a);
   return { rutas: rutasSel, restaurantes: rest, alojamientos: alojSel, actividades: acts, conBebe };
 }
-function construirDias(pf, viaje, d, carta, mods) {
-  const nDias = viaje?.duracion_dias ?? 5;
+function construirDias(pf, viaje, d, carta, mods, nDias) {
   const restr = norm(JSON.stringify([viaje?.restricciones_viaje, pf.restricciones]));
   const conBebe = carta.conBebe;
   const sinMadrugar = mods.has('sin-madrugar') || /madrugar|lento/.test(restr) || /tranquilo/.test(norm(pf.temperamento));
@@ -462,33 +568,53 @@ function construirDias(pf, viaje, d, carta, mods) {
     ...carta.actividades.map((a) => ({ plan: a.nombre, ref: a.nombre, amb: ambitosDeElemento(a) })),
   ];
   const usados = new Set(), vistos = new Map();
+  let ultimoPlanRef = null;
   const boost = new Set([...mods].flatMap((m) => B.tax.regeneraciones[m]?.boost_ambitos ?? []));
-  const valor = (it) => { if (usados.has(it.ref)) return -Infinity;
-    let v = it.plan.startsWith('Ruta') ? 1 : 0;
+  const puntuar = (it) => { let v = it.plan.startsWith('Ruta') ? 1 : 0;
     for (const a of it.amb) { v -= (vistos.get(a) ?? 0) * 2; if (boost.has(a)) v += 5; }
     return v; };
-  const toma = () => { let mejor = null, mv = -Infinity;
-    for (const it of pool) { const v = valor(it); if (v > mv) { mv = v; mejor = it; } }
-    if (!mejor || mv === -Infinity) return null;
-    usados.add(mejor.ref); for (const a of mejor.amb) vistos.set(a, (vistos.get(a) ?? 0) + 1);
-    return mejor; };
-  const rests = [...carta.restaurantes]; let rj = 0;
-  const cena = () => rests.length ? rests[rj++ % rests.length] : null;
+  // Rotación: cuando se agota el pool sin repetir, se abre nuevo ciclo para no dejar días vacíos hasta 10 (decisión #28)
+  const toma = () => {
+    if (!pool.length) return null;
+    const mejor = (excl) => { let m = null, mv = -Infinity;
+      for (const it of pool) { if (it.ref === ultimoPlanRef) continue; if (excl && usados.has(it.ref)) continue;
+        const v = puntuar(it); if (v > mv) { mv = v; m = it; } } return m; };
+    let el = mejor(true); if (!el) { usados.clear(); el = mejor(true); } if (!el) el = mejor(false);
+    if (!el) return null;
+    usados.add(el.ref); ultimoPlanRef = el.ref; for (const a of el.amb) vistos.set(a, (vistos.get(a) ?? 0) + 1);
+    return el; };
+  // Mesas: SIEMPRE hay cena (decisión #28). Se rota la lista verificada evitando repetir dos días seguidos.
+  const rests = [...carta.restaurantes]; let rj = 0, ultimaMesa = null;
+  const cena = () => { if (!rests.length) return null;
+    let r = rests[rj % rests.length]; if (rests.length > 1 && r.ref === ultimaMesa) { rj++; r = rests[rj % rests.length]; }
+    rj++; ultimaMesa = r.ref; return r; };
+  // Días de descanso: SOLO en viajes >10 días (decisión #28), intercalados y con su cena
+  const diasLibres = new Set();
+  if (nDias > 10) { const nL = nDias - 10;
+    for (let k = 1; k <= nL; k++) diasLibres.add(1 + Math.round((k * (nDias - 2)) / (nL + 1))); }
+  const LIBRE_M = 'Día para respirar: descansa a tu ritmo, vuelve a lo que más te gustó o piérdete por tu cuenta';
+  const LIBRE_T = 'Tarde libre, a tu aire';
   const dias = [];
   for (let n = 1; n <= nDias; n++) {
     const bl = {};
     let ambDia = null;
-    if (n === 1) { bl.manana = 'Llegada y acomodo'; bl.tarde = 'Paseo suave para tomar el pulso al sitio'; }
-    else if (n === nDias) { bl.manana = 'Mañana sin prisa antes de volver'; const a = toma(); if (a) { bl.tarde = a.plan; ambDia = a.amb[0]; } }
-    else {
-      const m = toma(); if (m) { bl.manana = m.plan; ambDia = m.amb[0]; } else bl.manana = 'Tiempo libre';
-      if (conBebe) bl.tarde = 'Tarde tranquila (siesta del bebé) y paseo corto';
-      else { const t = toma(); bl.tarde = t ? t.plan : 'Tiempo libre'; }
+    const ponCena = (et) => { const c = cena(); bl[et === 'Cena' ? 'noche' : 'mediodia'] = c ? et + ': ' + c.nombre : et + ' a tu elección'; };
+    if (n === 1) { bl.manana = 'Llegada y acomodo'; bl.tarde = 'Paseo suave para tomar el pulso al sitio'; ponCena('Cena'); }
+    else if (n === nDias) {
+      bl.manana = 'Mañana sin prisa antes de volver';
+      ponCena('Comida de despedida');
+      const a = toma(); if (a) { bl.tarde = a.plan; ambDia = a.amb[0]; }
     }
-    if (n < nDias) { const c = cena(); if (c) bl.noche = 'Cena: ' + c.nombre; }
-    dias.push({ n, amb: ambDia ? (B.tax.ambitos[ambDia] ?? ambDia) : (n === 1 ? 'Llegada' : 'Libre'), bl });
+    else if (diasLibres.has(n)) { bl.manana = LIBRE_M; bl.tarde = LIBRE_T; ponCena('Cena'); }
+    else {
+      const m = toma(); if (m) { bl.manana = m.plan; ambDia = m.amb[0]; } else bl.manana = LIBRE_M;
+      if (conBebe) bl.tarde = 'Tarde tranquila (siesta del bebé) y paseo corto';
+      else { const t = toma(); bl.tarde = t ? t.plan : LIBRE_T; }
+      ponCena('Cena');
+    }
+    dias.push({ n, amb: ambDia ? (B.tax.ambitos[ambDia] ?? ambDia) : (n === 1 ? 'Llegada' : diasLibres.has(n) ? 'Descanso' : 'Libre'), bl });
   }
-  return { dias, cubiertos: [...vistos.keys()] };
+  return { dias, cubiertos: [...vistos.keys()], mesas: Math.min(rj, rests.length) };
 }
 
 /* ============ PARSER-LITE (gemelo de motor/parsear.mjs) ============ */
@@ -613,27 +739,17 @@ function construirPerfil(a) {
 let estado = {
   perfil: JSON.parse(localStorage.getItem('brujula_perfil') ?? 'null'),
   viaje: null, bolsas: null, ronda: 0, vistos: new Set(),
-  vista: 'inicio', destino: null, mods: new Set(), pila: [],
+  vista: 'inicio', destino: null, mods: new Set(), dias: null, pila: [],
 };
-/* ---- datos de uso: viven SOLO en tu dispositivo hasta que TÚ los envías ---- */
+/* ---- Datos de uso: se recogen SOLOS (cola + reintento a CONFIG.recogida). Sin correo. ---- */
 const eventos = JSON.parse(localStorage.getItem('brujula_eventos') ?? '[]');
 function evento(tipo, datos = {}) {
-  eventos.push({ t: tipo, d: datos, ts: new Date().toISOString().slice(0, 16) });
+  const ev = { t: tipo, d: datos, ts: new Date().toISOString().slice(0, 16) };
+  eventos.push(ev);
   if (eventos.length > 400) eventos.splice(0, eventos.length - 400);
   localStorage.setItem('brujula_eventos', JSON.stringify(eventos));
-  fetch('/api/eventos', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(eventos[eventos.length - 1]) }).catch(() => {});
-  if (eventos.length === 15 && !localStorage.getItem('brujula_aviso_datos')) {
-    localStorage.setItem('brujula_aviso_datos', '1');
-    setTimeout(() => { if (confirm('¿Nos ayudas a mejorar Brújula? Se abrirá tu correo con tus datos de uso (anónimos) ya escritos — tú decides si darle a enviar.')) enviarDatos(); }, 900);
-  }
-}
-function enviarDatos() {
-  const resumen = {
-    perfil: estado.perfil ? { ciudad: estado.perfil.ciudad_origen, intereses: (estado.perfil.intereses ?? []).slice(0, 6), presupuesto: estado.perfil.presupuesto?.nivel } : null,
-    solicitados: JSON.parse(localStorage.getItem('brujula_solicitados') ?? '[]'),
-    eventos: eventos.slice(-60),
-  };
-  location.href = 'mailto:borjapt96@gmail.com?subject=BRUJULA_DATOS&body=' + encodeURIComponent(JSON.stringify(resumen)).slice(0, 1800);
+  recoger('evento', ev);                       // transporte principal: POST automático (sin que el usuario mande nada)
+  fetch('/api/eventos', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(ev) }).catch(() => {}); // pruebas por wifi local
 }
 function ir(vista, empuja = true) {
   if (empuja && estado.vista !== vista) estado.pila.push(estado.vista);
@@ -644,8 +760,6 @@ $('#atras').onclick = atras;
 $('#menu').onclick = () => {
   if (confirm('¿Rehacer tu entrevista de perfil? (también puedes probar la app como una de nuestras 25 personas de prueba pulsando Cancelar y de nuevo ⋯)')) {
     localStorage.removeItem('brujula_perfil'); estado = { ...estado, perfil: null, pila: [], vista: 'entrevista' }; pinta();
-  } else if (confirm('¿Enviar tus datos de uso al equipo? (se abre tu correo, tú decides)')) {
-    enviarDatos();
   } else if (confirm('¿Entrar en modo demo con una persona de prueba?')) {
     const nombres = B.personas.map((p, i) => `${i + 1}. ${p.nombre} — ${p.linea.slice(0, 50)}…`).join('\n');
     const n = parseInt(prompt('Elige nº de persona:\n' + nombres) ?? '', 10);
@@ -709,6 +823,7 @@ function vistaEntrevista() {
   const termina = () => {
     estado.perfil = construirPerfil(respuestas);
     localStorage.setItem('brujula_perfil', JSON.stringify(estado.perfil));
+    recoger('perfil', { perfil: estado.perfil, respuestas });  // se recoge solo, sin que el usuario mande nada
     evento('perfil_creado', { ciudad: estado.perfil.ciudad_origen, intereses: (estado.perfil.intereses ?? []).slice(0, 5) });
     burbuja(`Perfecto, ${estado.perfil.nombre}. Ya te conozco lo suficiente para empezar — y seguiré aprendiendo con cada viaje. Vamos a por el primero 🧭`, false);
     setTimeout(() => { estado.pila = []; ir('inicio', false); }, 1100);
@@ -730,6 +845,7 @@ function vistaInicio() {
       <button data-f="5 días yo solo, desconectar de verdad">Solo, a desconectar</button>
     </div>
     <button class="enlace-manual" id="manual">📍 Ya tengo destino — organízamelo</button>
+    ${yaInstalada ? '' : '<button class="enlace-instalar" id="instalar"><span>⬇️</span> Descargar la app · Android e iPhone</button>'}
     <p class="pie">Un valor seguro + sorpresas de verdad. Todo verificado con fuentes.<br>Y seguimos verificando destinos nuevos cada semana.</p>
   </div>`;
   const lanza = (f) => {
@@ -745,6 +861,7 @@ function vistaInicio() {
   $('#frase').onkeydown = (e) => { if (e.key === 'Enter') lanza($('#frase').value.trim()); };
   document.querySelectorAll('.sugerencias button').forEach((b) => { b.onclick = () => { $('#frase').value = b.dataset.f; lanza(b.dataset.f); }; });
   $('#manual').onclick = () => ir('manual');
+  const bi = $('#instalar'); if (bi) bi.onclick = instalarApp;
 }
 
 /* ============ VISTA: FEED con refrescos ============ */
@@ -802,7 +919,7 @@ function vistaDestino() {
   const c = [...bols.seguros, ...bols.sorpresas].find((x) => x.d.id === d.id);
   let h = `<div class="vista"><article class="tarjeta" style="cursor:default;margin-top:2px">
     <div class="hero hero-d" id="fd-${d.id}"><div class="letra">${esc(d.nombre[0])}</div><div class="velo"></div>
-      <div class="titulo"><h2>${esc(d.nombre)}</h2><p>${esc(d.region)}, ${esc(d.pais)}</p><div class="datos"><span>${d.presupuesto.eur_persona_dia[0]}–${d.presupuesto.eur_persona_dia[1]} €/día</span>${estado.viaje?.duracion_dias ? `<span>${estado.viaje.duracion_dias} días</span>` : ''}${estado.viaje?.mes ? `<span>${MESES[estado.viaje.mes-1][0].toUpperCase()+MESES[estado.viaje.mes-1].slice(1)} ✓</span>` : ''}</div></div></div></article>
+      <div class="titulo"><h2>${esc(d.nombre)}</h2><p>${esc(d.region)}, ${esc(d.pais)}</p><div class="datos"><span>${d.presupuesto.eur_persona_dia[0]}–${d.presupuesto.eur_persona_dia[1]} €/día</span><span>★ ${diasRecomendados(d)} días recomendados</span>${estado.viaje?.duracion_dias ? `<span>Tú: ${estado.viaje.duracion_dias} días</span>` : ''}${estado.viaje?.mes ? `<span>${MESES[estado.viaje.mes-1][0].toUpperCase()+MESES[estado.viaje.mes-1].slice(1)} ✓</span>` : ''}</div></div></div></article>
     <div class="seccion"><p class="editorial">${esc(d.resumen_editorial)}</p></div>`;
   if (c) h += `<div class="seccion"><h3>Por qué a ti</h3><ul class="porques">${c.raz.slice(0, 4).map((q) => `<li>${esc(q)}</li>`).join('')}</ul></div>`;
   h += `<div class="seccion"><h3>Cuándo ir</h3><div class="meses">${Object.entries(d.clima_por_mes).map(([m, cl]) =>
@@ -828,24 +945,30 @@ function vistaDestino() {
   $('#app').innerHTML = h;
   ponFoto('fd-' + d.id, candidatosFoto(d.foto_wiki, 900));
   for (const [idF, el] of fotosPend) ponFoto(idF, candidatosElemento(el, d, 300));
-  $('#monta').onclick = () => { estado.mods = new Set(); ir('plan'); };
+  $('#monta').onclick = () => { estado.mods = new Set(); estado.dias = null; ir('plan'); };
 }
 
 /* ============ VISTA: PLAN (con regeneración en vivo) ============ */
 function vistaPlan() {
   const d = B.destinos[estado.destino];
-  evento('plan_generado', { id: d.id, mods: [...estado.mods] });
+  evento('plan_generado', { id: d.id, dias: estado.dias, mods: [...estado.mods] });
   const pf = estado.perfil;
-  const carta = construirCarta(pf, estado.viaje, d, new Set([...estado.mods].flatMap((m) => B.tax.regeneraciones[m]?.boost_ambitos ?? [])));
-  const { dias, cubiertos } = construirDias(pf, estado.viaje, d, carta, estado.mods);
-  const nD = estado.viaje?.duracion_dias ?? 5;
+  const rec = diasRecomendados(d);
+  const nD = estado.dias ?? estado.viaje?.duracion_dias ?? rec;
+  const maxSel = Math.min(B.reglas.estancia?.dias_max ?? 14, 14);
+  const carta = construirCarta(pf, estado.viaje, d, new Set([...estado.mods].flatMap((m) => B.tax.regeneraciones[m]?.boost_ambitos ?? [])), nD);
+  const { dias, cubiertos } = construirDias(pf, estado.viaje, d, carta, estado.mods, nD);
   const REGS = ['mas-gastronomico','mas-naturaleza','mas-cultura','mas-aventura','mas-fiesta','mas-tranquilo','sin-madrugar','mas-barato'];
   let h = `<div class="vista"><p class="saludo" style="font-size:24px">${esc(d.nombre)}, <em>día a día</em></p>
     <div class="chips">${cubiertos.map((a) => `<span class="chip">${esc(B.tax.ambitos[a] ?? a)}</span>`).join('')}</div>
+    <div class="dias-caja"><b>¿Cuántos días vas a estar?</b>
+      <small>Nuestro punto dulce son <b>${rec} días</b>: cada uno con un plan nuevo y una mesa distinta. Elige los que quieras — te llenamos todos con cena cada noche${maxSel > 10 ? ', y en los viajes largos intercalamos días de descanso' : ''}.</small>
+      <div class="dias-sel">${Array.from({ length: maxSel - 1 }, (_, i) => i + 2).map((n) =>
+        `<button data-d="${n}" class="${n === nD ? 'sel' : ''}${n === rec ? ' rec' : ''}">${n}${n === rec ? '<i>rec.</i>' : ''}</button>`).join('')}</div></div>
     <div class="regen">${REGS.map((r) => `<button data-r="${r}" class="${estado.mods.has(r) ? 'sel' : ''}">${esc(B.tax.regeneraciones[r]?.etiqueta ?? r)}</button>`).join('')}</div>`;
   for (const dia of dias) {
     h += `<div class="dia"><div class="cab"><span class="num">Día ${dia.n}</span><span class="amb">${esc(dia.amb)}</span></div>`;
-    for (const [b, v] of Object.entries(dia.bl)) h += `<div class="bloque"><span class="h">${b === 'manana' ? 'Mañana' : b === 'tarde' ? 'Tarde' : 'Noche'}</span><span class="p">${esc(v)}</span></div>`;
+    for (const [b, v] of Object.entries(dia.bl)) h += `<div class="bloque"><span class="h">${b === 'manana' ? 'Mañana' : b === 'mediodia' ? 'Mediodía' : b === 'tarde' ? 'Tarde' : 'Noche'}</span><span class="p">${esc(v)}</span></div>`;
     h += '</div>';
   }
   h += `<div class="tarjeton"><span class="sobre">TU TARJETA · PARA COMPARTIR</span>
@@ -856,6 +979,8 @@ function vistaPlan() {
   <button class="btn-secundario" id="comparte">Compartir mi viaje</button>
   <p class="pie">Toca los botones de arriba para regenerar el plan a tu gusto, al instante.</p></div>`;
   $('#app').innerHTML = h;
+  document.querySelectorAll('.dias-sel button').forEach((b) => { b.onclick = () => { estado.dias = +b.dataset.d; vistaPlan(); }; });
+  const selDia = document.querySelector('.dias-sel button.sel'); if (selDia) selDia.scrollIntoView({ inline: 'center', block: 'nearest' });
   document.querySelectorAll('.regen button').forEach((b) => { b.onclick = () => {
     const r = b.dataset.r; estado.mods.has(r) ? estado.mods.delete(r) : estado.mods.add(r); vistaPlan(); }; });
   $('#comparte').onclick = () => {
@@ -889,9 +1014,8 @@ function vistaManual() {
         sug.map((d) => `<button data-s="${d.id}">${esc(d.nombre)}</button>`).join('') + '</div>';
       cont.querySelectorAll('[data-s]').forEach((b) => { b.onclick = () => { estado.viaje = estado.viaje ?? parsearFrase(''); estado.destino = b.dataset.s; ir('destino'); }; });
       $('#apunta').onclick = (e) => {
-        const cola = JSON.parse(localStorage.getItem('brujula_solicitados') ?? '[]');
-        cola.push({ destino: $('#busca').value.trim(), fecha: new Date().toISOString().slice(0, 10) });
-        localStorage.setItem('brujula_solicitados', JSON.stringify(cola));
+        // Se recoge solo: ni el usuario tiene que escribir un correo, ni nosotros perdemos la petición
+        recoger('solicitud_destino', { destino: $('#busca').value.trim(), perfil: estado.perfil ?? null });
         e.target.textContent = '✓ Apuntado — te avisaremos'; e.target.disabled = true;
       };
       return;
