@@ -241,9 +241,10 @@ const B = window.BRUJULA;
 
 /* ============ CONFIG ============ */
 const CONFIG = {
-  // Endpoint de recogida de datos (Formspree, Google Apps Script, Cloudflare Worker… cualquiera que acepte POST JSON).
-  // Mientras esté vacío, los datos se guardan en cola local y se envían solos en cuanto pegues aquí la URL.
-  recogida: '',
+  // Endpoint de recogida de datos: Google Apps Script → hoja de cálculo del fundador (decisión #28).
+  // Código del endpoint e instrucciones: data/usuarios/apps-script-recogida.gs
+  // Si se deja vacío, los datos quedan en cola local y se envían en cuanto se ponga una URL.
+  recogida: 'https://script.google.com/macros/s/AKfycbz4JXagBouAfNGc4YHT6ePFGYDxzCbEodKN_amfCGbW4R6X83iC7h_jdYS60C_nClfi/exec',
 };
 const $ = (s) => document.querySelector(s);
 const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
@@ -310,32 +311,63 @@ function recoger(tipo, datos) {
   clearTimeout(temporizadorEnvio);
   temporizadorEnvio = setTimeout(() => enviarPendientes(), RECOGIDA_ESPERA);
 }
+function armarPaquete(cola) {
+  // El perfil se lee de localStorage (no de 'estado'): esta función también corre al arrancar
+  const pf = JSON.parse(localStorage.getItem('brujula_perfil') ?? 'null');
+  return {
+    // 'id' único por paquete: el Apps Script descarta los repetidos, así reenviar nunca duplica filas
+    app: 'brujula', version: B.version, id: crypto.randomUUID?.() ?? String(Date.now()) + Math.random().toString(16).slice(2),
+    visitante: idVisitante(), enviado: new Date().toISOString(),
+    perfil: pf ? { nombre: pf.nombre, ciudad: pf.ciudad_origen, intereses: (pf.intereses ?? []).slice(0, 8),
+                   presupuesto: pf.presupuesto?.nivel, companias: pf.companias, gastronomia: pf.gastronomia,
+                   restricciones: pf.restricciones } : null,
+    eventos: cola,
+    dispositivo: { ua: navigator.userAgent, idioma: navigator.language },
+  };
+}
+// Devuelve 'ok' | 'beacon' | 'fallo'. Plan B con sendBeacon porque Apps Script contesta con una
+// redirección a googleusercontent.com: si esa respuesta llegara sin cabeceras CORS, el fetch legible
+// falla aunque el dato SÍ haya entrado. El beacon garantiza la entrega (a ciegas, sin poder leer la respuesta).
+async function mandarPaquete(paquete, { alSalir = false } = {}) {
+  const url = CONFIG.recogida, cuerpo = JSON.stringify(paquete);
+  try {
+    const r = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                                 body: cuerpo, keepalive: alSalir });
+    if (r.ok) return 'ok';
+  } catch { /* CORS o sin red: probamos el plan B */ }
+  try {
+    if (navigator.sendBeacon?.(url, new Blob([cuerpo], { type: 'text/plain;charset=UTF-8' }))) return 'beacon';
+  } catch {}
+  return 'fallo';
+}
+const SIN_CONFIRMAR = 'brujula_sin_confirmar';
 async function enviarPendientes({ alSalir = false } = {}) {
-  const url = CONFIG.recogida;
-  if (!url || enviando) return;
+  if (!CONFIG.recogida || enviando) return 'fallo';
   const cola = JSON.parse(localStorage.getItem('brujula_envios') ?? '[]');
-  if (!cola.length) return;
+  if (!cola.length) return 'ok';
   enviando = true;
   try {
-    // El perfil se lee de localStorage (no de 'estado'): esta función también corre al arrancar
-    const pf = JSON.parse(localStorage.getItem('brujula_perfil') ?? 'null');
-    const paquete = {
-      app: 'brujula', version: B.version, visitante: idVisitante(), enviado: new Date().toISOString(),
-      perfil: pf ? { nombre: pf.nombre, ciudad: pf.ciudad_origen, intereses: (pf.intereses ?? []).slice(0, 8),
-                     presupuesto: pf.presupuesto?.nivel, companias: pf.companias, gastronomia: pf.gastronomia,
-                     restricciones: pf.restricciones } : null,
-      eventos: cola,
-      dispositivo: { ua: navigator.userAgent, idioma: navigator.language },
-    };
-    const r = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-                                 body: JSON.stringify(paquete), keepalive: alSalir });
-    if (r.ok) {   // solo se descarta lo enviado: lo que haya entrado mientras tanto se queda en cola
+    const paquete = armarPaquete(cola);
+    const res = await mandarPaquete(paquete, { alSalir });
+    if (res !== 'fallo') {   // solo se descarta lo enviado: lo que entrara mientras tanto sigue en cola
       const resto = JSON.parse(localStorage.getItem('brujula_envios') ?? '[]').slice(cola.length);
       localStorage.setItem('brujula_envios', JSON.stringify(resto));
     }
-  } catch { /* sin red: la cola aguanta y se reintenta */ } finally { enviando = false; }
+    // Entregado "a ciegas" (beacon): no sabemos si llegó, así que se guarda para un segundo intento
+    // en el próximo arranque. El 'id' del paquete evita que la hoja duplique la fila si sí había llegado.
+    if (res === 'beacon') localStorage.setItem(SIN_CONFIRMAR, JSON.stringify(paquete));
+    else localStorage.removeItem(SIN_CONFIRMAR);
+    return res;
+  } finally { enviando = false; }
 }
-enviarPendientes();                                    // reintenta la cola en cada arranque
+async function reintentarSinConfirmar() {               // segundo (y último) intento, mismo id
+  const guardado = localStorage.getItem(SIN_CONFIRMAR);
+  if (!guardado || !CONFIG.recogida) return;
+  localStorage.removeItem(SIN_CONFIRMAR);               // se borra siempre: dos intentos y no más
+  try { await mandarPaquete(JSON.parse(guardado)); } catch {}
+}
+reintentarSinConfirmar();                              // rescata lo que quedó sin confirmar
+enviarPendientes();                                    // y reintenta la cola en cada arranque
 addEventListener('pagehide', () => enviarPendientes({ alSalir: true }));   // y al cerrar la app
 document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') enviarPendientes({ alSalir: true }); });
 
@@ -787,8 +819,20 @@ $('#menu').onclick = () => {
     const n = parseInt(prompt('Elige nº de persona:\n' + nombres) ?? '', 10);
     const p = B.personas[n - 1];
     if (p) { estado.perfil = { ...p.perfil, nombre: p.perfil.nombre }; localStorage.setItem('brujula_perfil', JSON.stringify(estado.perfil)); estado.pila = []; ir('inicio', false); }
+  } else if (confirm('¿Comprobar que la recogida de datos llega a la hoja? (manda una fila de prueba)')) {
+    comprobarRecogida();
   }
 };
+// Diagnóstico para el fundador: manda una fila marcada como PRUEBA y dice sin rodeos qué ha pasado.
+async function comprobarRecogida() {
+  if (!CONFIG.recogida) { alert('No hay endpoint configurado todavía (CONFIG.recogida está vacío).'); return; }
+  const res = await mandarPaquete({ ...armarPaquete([{ tipo: 'prueba_recogida', datos: { desde: 'menú ⋯' }, fecha: new Date().toISOString() }]), visitante: 'PRUEBA' });
+  alert(res === 'ok' ? '✓ Recogida OK: la hoja ha confirmado la fila. Búscala con «PRUEBA» en la columna visitante (puedes borrarla).'
+      : res === 'beacon' ? '✓ Enviado (a ciegas): el navegador no deja leer la respuesta de Google, así que mira la hoja. Si aparece una fila «PRUEBA», funciona.'
+      : '✗ No se ha podido enviar. Comprueba que la implementación del Apps Script esté como «Cualquier persona» y que la URL acabe en /exec. Los datos siguen guardados en el móvil y se reintentarán.');
+  const pend = JSON.parse(localStorage.getItem('brujula_envios') ?? '[]').length;
+  if (pend) setTimeout(() => alert(`Tienes ${pend} paquete/s en cola local esperando envío.`), 400);
+}
 
 /* ============ VISTA: ENTREVISTA ============ */
 function vistaEntrevista() {
