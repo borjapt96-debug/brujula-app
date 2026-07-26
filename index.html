@@ -290,32 +290,54 @@ function abrirModal(html) {
 }
 
 /* ============ RECOGIDA AUTOMÁTICA DE DATOS (sin correo: se envían solos) ============ */
-// Todo lo que el usuario genera (perfil al terminar la entrevista, solicitudes de destino) se captura
-// automáticamente. Si aún no hay endpoint, queda en cola local y se reintenta en cada arranque.
+// Todo lo que el usuario genera (perfil, búsquedas, destinos abiertos, planes, solicitudes sin match) se
+// captura y se manda SOLO, agrupado en PAQUETES: un envío por sesión en vez de uno por clic (así la hoja
+// se lee de un vistazo y no se malgastan cuotas). Formato = una línea JSON por paquete (data/usuarios/eventos.jsonl).
+// Sin endpoint todavía: queda en cola local y se reintenta en cada arranque — no se pierde nada.
+// NOTA TÉCNICA: se envía como text/plain A PROPÓSITO. Es una petición "simple" y así no dispara el
+// preflight CORS (OPTIONS) que Google Apps Script no atiende. El cuerpo sigue siendo JSON.
+const RECOGIDA_ESPERA = 15000;              // agrupa en un solo envío lo que pase en este rato
+let temporizadorEnvio = null, enviando = false;
+function idVisitante() {                    // anónimo y estable: permite agrupar sesiones del mismo móvil
+  let v = localStorage.getItem('brujula_visitante');
+  if (!v) { v = crypto.randomUUID?.() ?? String(Date.now()) + Math.random().toString(16).slice(2); localStorage.setItem('brujula_visitante', v); }
+  return v;
+}
 function recoger(tipo, datos) {
   const cola = JSON.parse(localStorage.getItem('brujula_envios') ?? '[]');
-  cola.push({ tipo, datos, fecha: new Date().toISOString(), id: (crypto.randomUUID?.() ?? String(Date.now() + Math.random())), ua: navigator.userAgent, ref: location.href });
+  cola.push({ tipo, datos, fecha: new Date().toISOString() });
   localStorage.setItem('brujula_envios', JSON.stringify(cola.slice(-200)));
-  enviarPendientes();
+  clearTimeout(temporizadorEnvio);
+  temporizadorEnvio = setTimeout(() => enviarPendientes(), RECOGIDA_ESPERA);
 }
-let enviando = false;
-async function enviarPendientes() {
+async function enviarPendientes({ alSalir = false } = {}) {
   const url = CONFIG.recogida;
   if (!url || enviando) return;
+  const cola = JSON.parse(localStorage.getItem('brujula_envios') ?? '[]');
+  if (!cola.length) return;
   enviando = true;
   try {
-    let cola = JSON.parse(localStorage.getItem('brujula_envios') ?? '[]');
-    const quedan = [];
-    for (const ev of cola) {
-      try {
-        const r = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' }, body: JSON.stringify(ev) });
-        if (!r.ok) quedan.push(ev);
-      } catch { quedan.push(ev); }
+    // El perfil se lee de localStorage (no de 'estado'): esta función también corre al arrancar
+    const pf = JSON.parse(localStorage.getItem('brujula_perfil') ?? 'null');
+    const paquete = {
+      app: 'brujula', version: B.version, visitante: idVisitante(), enviado: new Date().toISOString(),
+      perfil: pf ? { nombre: pf.nombre, ciudad: pf.ciudad_origen, intereses: (pf.intereses ?? []).slice(0, 8),
+                     presupuesto: pf.presupuesto?.nivel, companias: pf.companias, gastronomia: pf.gastronomia,
+                     restricciones: pf.restricciones } : null,
+      eventos: cola,
+      dispositivo: { ua: navigator.userAgent, idioma: navigator.language },
+    };
+    const r = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                                 body: JSON.stringify(paquete), keepalive: alSalir });
+    if (r.ok) {   // solo se descarta lo enviado: lo que haya entrado mientras tanto se queda en cola
+      const resto = JSON.parse(localStorage.getItem('brujula_envios') ?? '[]').slice(cola.length);
+      localStorage.setItem('brujula_envios', JSON.stringify(resto));
     }
-    localStorage.setItem('brujula_envios', JSON.stringify(quedan));
-  } finally { enviando = false; }
+  } catch { /* sin red: la cola aguanta y se reintenta */ } finally { enviando = false; }
 }
-enviarPendientes();  // reintenta la cola en cada arranque
+enviarPendientes();                                    // reintenta la cola en cada arranque
+addEventListener('pagehide', () => enviarPendientes({ alSalir: true }));   // y al cerrar la app
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') enviarPendientes({ alSalir: true }); });
 
 /* ============ FOTOS: Wikipedia → Commons → respaldo (nunca imagen rota) ============ */
 const cacheFotos = {};
