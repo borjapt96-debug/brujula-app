@@ -248,6 +248,13 @@ const CONFIG = {
   // Código del endpoint e instrucciones: data/usuarios/apps-script-recogida.gs
   // Si se deja vacío, los datos quedan en cola local y se envían en cuanto se ponga una URL.
   recogida: 'https://script.google.com/macros/s/AKfycbz4JXagBouAfNGc4YHT6ePFGYDxzCbEodKN_amfCGbW4R6X83iC7h_jdYS60C_nClfi/exec',
+  // IA de verdad en el chat: URL /exec del proxy que guarda la clave de Anthropic.
+  // Código e instrucciones (5 min): app/apps-script-ia.gs — se genera con
+  // `node fabrica/construir-proxy-ia.mjs` desde motor/prompts/parser-viaje.md.
+  // JAMÁS pongas aquí la clave: esta app es pública y la vería cualquiera.
+  // Vacío = la app usa el parser determinista de siempre (no se rompe nada).
+  ia: '',
+  iaMs: 6000,   // si la IA tarda más que esto, se responde con el parser y no se hace esperar al usuario
 };
 const $ = (s) => document.querySelector(s);
 const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
@@ -735,6 +742,32 @@ function construirDias(pf, viaje, d, carta, mods, nDias) {
   return { dias, cubiertos: [...vistos.keys()], mesas: Math.min(rj, rests.length) };
 }
 
+/* ============ PARSER CON IA (Claude vía proxy) ============
+   La gente escribe como habla, no con las palabras que tenemos fichadas. Si CONFIG.ia
+   está puesto, la frase va a Claude (mismo prompt que el laboratorio) y entiende matices
+   que ninguna regex pilla. Si no hay proxy, si tarda, o si falla: se usa parsearFrase()
+   de siempre. La app NUNCA se queda colgada ni se rompe por esto. */
+async function parsearFraseIA(frase) {
+  const respaldo = parsearFrase(frase);
+  if (!CONFIG.ia || !frase) return respaldo;
+  try {
+    const corte = AbortSignal.timeout ? AbortSignal.timeout(CONFIG.iaMs) : undefined;
+    const r = await fetch(CONFIG.ia, {
+      method: 'POST',
+      headers: { 'content-type': 'text/plain;charset=utf-8' }, // text/plain: evita el preflight CORS que Apps Script no atiende
+      body: JSON.stringify({ frase }),
+      signal: corte,
+    });
+    if (!r.ok) return respaldo;
+    const v = await r.json();
+    if (!v || v.error) return respaldo;
+    // La IA rellena lo que entienda; lo que no diga, se queda con lo del parser determinista.
+    return { ...respaldo, ...Object.fromEntries(Object.entries(v).filter(([, x]) => x !== null && x !== undefined)), _fuente: 'parser-ia' };
+  } catch {
+    return respaldo;
+  }
+}
+
 /* ============ PARSER-LITE (gemelo de motor/parsear.mjs) ============ */
 function parsearFrase(frase) {
   const t = norm(frase);
@@ -984,9 +1017,16 @@ function vistaInicio() {
     ${yaInstalada ? '' : '<button class="enlace-instalar" id="instalar"><span>⬇️</span> Descargar la app · Android e iPhone</button>'}
     <p class="pie">Un valor seguro + sorpresas de verdad. Todo verificado con fuentes.<br>Y seguimos verificando destinos nuevos cada semana.</p>
   </div>`;
-  const lanza = (f) => {
-    const v = parsearFrase(f || 'Sorpréndeme');
-    evento('busqueda', { f: (f || 'sorpréndeme').slice(0, 90), mes: v.mes, comp: v.compania });
+  let pensando = false;
+  const lanza = async (f) => {
+    if (pensando) return;                     // evita dobles envíos mientras piensa la IA
+    pensando = true;
+    const btn = $('#manda'); const antes = btn ? btn.textContent : null;
+    if (btn && CONFIG.ia) { btn.textContent = 'Pensando…'; btn.disabled = true; }
+    let v;
+    try { v = await parsearFraseIA(f || 'Sorpréndeme'); }
+    finally { pensando = false; if (btn && antes !== null) { btn.textContent = antes; btn.disabled = false; } }
+    evento('busqueda', { f: (f || 'sorpréndeme').slice(0, 90), mes: v.mes, comp: v.compania, ia: v._fuente === 'parser-ia' });
     estado.viaje = v;
     if (v.destinoDirecto) { estado.destino = v.destinoDirecto; ir('destino'); return; }
     estado.bolsas = calcularBolsas(estado.perfil, v);
