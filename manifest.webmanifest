@@ -6,7 +6,7 @@
   "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#FAF9F5",
-  "theme_color": "#0A4B72",
+  "theme_color": "#2B4E8C",
   "icons": [
     { "src": "icono.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" },
     { "src": "icono.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "maskable" }

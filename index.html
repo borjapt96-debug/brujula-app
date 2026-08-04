@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Brújula — 3 destinos para ti</title>
-<meta name="theme-color" content="#0A4B72">
+<meta name="theme-color" content="#2B4E8C">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icono.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="icono.svg">
@@ -203,6 +203,12 @@
   .aviso-etapas{font-size:13px;color:var(--tinta-2);background:var(--azul-50);border:1px solid var(--azul-200);
                 border-radius:14px;padding:11px 14px;margin:12px 0 2px;line-height:1.5}
   .aviso-etapas b{color:var(--azul-950)}
+  .sello-build{display:flex;gap:11px;align-items:center;margin:16px 0 2px;padding:11px 13px;border:1px solid var(--borde);
+               border-radius:14px;background:var(--carta);font-size:12.5px;color:var(--tinta-2);line-height:1.45}
+  .sello-build b{color:var(--azul-950);font-weight:600}
+  .sello-build small{color:var(--tinta-3);font-size:11.5px}
+  .sello-build .marca{flex:none;display:flex}
+  .sello-build.viejo small{color:var(--coral-600);font-weight:600}
   .dia{background:var(--carta);border:1px solid var(--borde);border-radius:20px;padding:16px 18px;margin:12px 0;box-shadow:0 1px 2px rgba(5,43,69,.04)}
   .dia .cab{display:flex;align-items:baseline;gap:10px;margin-bottom:10px;padding-bottom:10px;border-bottom:1px solid var(--borde)}
   .dia .num{font-family:var(--serif);font-size:20px;font-weight:600;color:var(--azul-800)}
@@ -248,13 +254,6 @@ const CONFIG = {
   // Código del endpoint e instrucciones: data/usuarios/apps-script-recogida.gs
   // Si se deja vacío, los datos quedan en cola local y se envían en cuanto se ponga una URL.
   recogida: 'https://script.google.com/macros/s/AKfycbz4JXagBouAfNGc4YHT6ePFGYDxzCbEodKN_amfCGbW4R6X83iC7h_jdYS60C_nClfi/exec',
-  // IA de verdad en el chat: URL /exec del proxy que guarda la clave de Anthropic.
-  // Código e instrucciones (5 min): app/apps-script-ia.gs — se genera con
-  // `node fabrica/construir-proxy-ia.mjs` desde motor/prompts/parser-viaje.md.
-  // JAMÁS pongas aquí la clave: esta app es pública y la vería cualquiera.
-  // Vacío = la app usa el parser determinista de siempre (no se rompe nada).
-  ia: '',
-  iaMs: 6000,   // si la IA tarda más que esto, se responde con el parser y no se hace esperar al usuario
 };
 const $ = (s) => document.querySelector(s);
 const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
@@ -265,6 +264,58 @@ const ICONO = { rutas:'🥾', gastronomia:'🍽️', alojamientos:'🛏️', cul
 const TITSEC = { rutas:'Rutas', gastronomia:'Dónde comer', cultura_ocio:'Planes', playas:'Playas y calas', alojamientos:'Dónde dormir' };
 const DESTINOS = Object.values(B.destinos);
 const verif = (arr) => (arr ?? []).filter((e) => e.verificacion?.estado === 'verificado');
+
+/* ============ LOGO DEL DÍA — señal honesta de "la app se ha actualizado" ============
+   OJO al detalle que lo hace útil: la variante NO sale de la fecha de hoy, sale de B.generado
+   (la fecha del build). Si saliera de hoy cambiaría de color a diario aunque no se hubiera
+   desplegado nada: un semáforo siempre en verde. Así, color nuevo = build nuevo de verdad. */
+const VARIANTES = [
+  { aro: '#0A4B72', aguja: '#D85A30', fondo: '#E4F2FB', trazo: 'solido',  nombre: 'azul brújula' },
+  { aro: '#123A6B', aguja: '#E8A33D', fondo: '#E7EDFA', trazo: 'doble',   nombre: 'índigo' },
+  { aro: '#0B5E63', aguja: '#E86A5C', fondo: '#E1F4F2', trazo: 'punteado',nombre: 'petróleo' },
+  { aro: '#1E3F8F', aguja: '#F0B429', fondo: '#E8ECFB', trazo: 'solido',  nombre: 'azul tinta' },
+  { aro: '#075E52', aguja: '#E4572E', fondo: '#E1F3ED', trazo: 'doble',   nombre: 'verde mar' },
+  { aro: '#3B2E7E', aguja: '#F2846B', fondo: '#EDEAFA', trazo: 'punteado',nombre: 'violeta' },
+  { aro: '#0F6BA0', aguja: '#F4794F', fondo: '#E4F2FB', trazo: 'solido',  nombre: 'azul claro' },
+  { aro: '#8A3B2A', aguja: '#F2C14E', fondo: '#FBEBE4', trazo: 'doble',   nombre: 'teja' },
+  { aro: '#14504A', aguja: '#EFA00B', fondo: '#E3F1EE', trazo: 'solido',  nombre: 'esmeralda' },
+  { aro: '#2B4E8C', aguja: '#EE6C4D', fondo: '#E9EFFA', trazo: 'punteado',nombre: 'marino' },
+];
+function varianteDeBuild(fecha) {
+  const dias = Math.floor(new Date((fecha || '2026-01-01') + 'T00:00:00Z').getTime() / 86400000);
+  return VARIANTES[((dias % VARIANTES.length) + VARIANTES.length) % VARIANTES.length];
+}
+const VAR_HOY = varianteDeBuild(B.generado);
+function svgLogo(v, tam = 22, conFondo = false) {
+  const dash = v.trazo === 'punteado' ? ' stroke-dasharray="2.6 2.2"' : '';
+  const aro2 = v.trazo === 'doble' ? `<circle cx="11" cy="11" r="6.4" stroke="${v.aro}" stroke-width="0.9" opacity=".55"/>` : '';
+  return `<svg width="${tam}" height="${tam}" viewBox="0 0 22 22" fill="none" aria-hidden="true">
+    ${conFondo ? `<rect width="22" height="22" rx="5" fill="${v.fondo}"/>` : ''}
+    <circle cx="11" cy="11" r="9.5" stroke="${v.aro}" stroke-width="1.6"${dash}/>${aro2}
+    <path d="M13.8 8.2 12 12l-3.8 1.8L10 10l3.8-1.8Z" fill="${v.aguja}"/></svg>`;
+}
+function aplicarLogoDelDia() {
+  const logo = document.querySelector('.logo');
+  if (logo) logo.innerHTML = svgLogo(VAR_HOY) + 'Brújula';
+  document.querySelector('meta[name="theme-color"]')?.setAttribute('content', VAR_HOY.aro);
+  // Favicon e icono en vivo (data URI): en el navegador se ve al momento
+  const icono = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192">
+    <rect width="192" height="192" rx="42" fill="${VAR_HOY.aro}"/>
+    <circle cx="96" cy="96" r="58" fill="none" stroke="${VAR_HOY.fondo}" stroke-width="9"${VAR_HOY.trazo === 'punteado' ? ' stroke-dasharray="22 18"' : ''}/>
+    ${VAR_HOY.trazo === 'doble' ? `<circle cx="96" cy="96" r="40" fill="none" stroke="${VAR_HOY.fondo}" stroke-width="4" opacity=".6"/>` : ''}
+    <path d="M123 69 105 105l-36 18 18-36z" fill="${VAR_HOY.aguja}"/>
+    <circle cx="96" cy="96" r="7" fill="${VAR_HOY.aro}"/></svg>`;
+  const url = 'data:image/svg+xml;utf8,' + encodeURIComponent(icono);
+  for (const sel of ['link[rel="icon"]', 'link[rel="apple-touch-icon"]']) document.querySelector(sel)?.setAttribute('href', url);
+}
+// Antigüedad del build: lo que de verdad responde a "¿se ha actualizado hoy?"
+function edadBuild() {
+  const hoy = new Date(); hoy.setHours(0, 0, 0, 0);
+  const b = new Date((B.generado || '2026-01-01') + 'T00:00:00');
+  const dias = Math.round((hoy - b) / 86400000);
+  const fecha = b.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' });
+  return { dias, fecha, texto: dias <= 0 ? 'actualizada hoy' : dias === 1 ? 'actualizada ayer' : `sin actualizar desde hace ${dias} días` };
+}
 
 /* ============ INSTALAR APP (PWA: Android/Chrome nativo · iOS instrucciones) ============ */
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').catch(() => {});
@@ -485,6 +536,9 @@ function filtrosDuros(pf, viaje, d) {
   const esEspana = norm(d.pais) === 'espana';
   if (viaje?.ambito_geografico === 'extranjero' && esEspana) fallos.push('pediste fuera de España');
   if (viaje?.ambito_geografico === 'espana' && !esEspana) fallos.push('pediste dentro de España');
+  // "Sitio remoto": una ciudad no lo es, por bien que encaje en lo demás. Filtro duro.
+  const car = (d.caracter ?? []).map(norm);
+  if (viaje?.remoto && (car.includes('urbano') || d.masificacion?.nivel_general === 'alto')) fallos.push('pediste un sitio remoto');
   if (/silla de ruedas|movilidad/.test(texto) && !(apto.movilidad_reducida?.apto === true && apto.movilidad_reducida?.verificado === true)) fallos.push('accesibilidad sin verificar');
   if (/lgtb/.test(texto) && apto.lgtb?.nivel !== 'abierto') fallos.push('LGTB no abierto');
   if (/seguridad/.test(texto) && apto.mujer_sola?.nivel_seguridad !== 'alto') fallos.push('seguridad');
@@ -505,7 +559,29 @@ function enHistorial(pf, d) {
   }
   return null;
 }
-function encaje(pf, d, mes) {
+// Un ámbito lo cumple el destino si lo tienen sus ELEMENTOS verificados o si define su CARÁCTER
+// (un sitio de fiesta con despensa flaca sigue siendo un sitio de fiesta).
+const AMB_CARACTER = {
+  fiesta_nocturna: ['fiesta','vibrante'], naturaleza: ['naturaleza','montana','montaña','verde','rio','volcanico','remoto'],
+  deporte_aventura: ['montana','montaña','aventura','surf','naturaleza'], gastronomia: ['gastronomico','enoturismo'],
+  cultura: ['cultural','historico'], arquitectura: ['arquitectura','diseño'], mar_playa: ['playa','costa','isla','surf'],
+  bienestar: ['bienestar'], artesania_compras: ['artesania'], espiritual: ['espiritual'],
+  eventos_festivales: ['fiesta'], romantico: ['romantico'], escenico: ['escenico','volcanico'], vida_local: ['autentico','exotico'],
+};
+function cumpleAmbito(d, a) {
+  if (ambitosDeDestino(d).has(a)) return 'elemento';
+  const carD = (d.caracter ?? []).map(norm);
+  return (AMB_CARACTER[a] ?? []).some((x) => carD.includes(x)) ? 'caracter' : null;
+}
+// Si la frase pide algo concreto, el destino tiene que cumplir AL MENOS uno. Lo que no lo cumple no
+// entra: antes se rellenaban los huecos con lo que puntuaba alto en el perfil (Cáceres para una
+// petición de fiesta) y eso es exactamente el relleno que el producto prohíbe. Fallo real, 4-ago.
+function sirveParaLoPedido(d, viaje) {
+  const pedidos = viaje?.ambitos_pedidos ?? [];
+  if (!pedidos.length) return true;
+  return pedidos.some((a) => cumpleAmbito(d, a));
+}
+function encaje(pf, d, mes, viaje) {
   let s = 0; const raz = [], ctx = [];
   const tInt = norm(JSON.stringify([pf.intereses, pf.temperamento, pf.vida_cotidiana?.domingo_libre]));
   const car = norm(JSON.stringify(d.caracter));
@@ -561,6 +637,32 @@ function encaje(pf, d, mes) {
   busca(/boutique|diseno/, ['boutique','singular-premium']);
   busca(/barato|economic|hostel|pension|apartamento|albergue/, ['economico','villa-grupo']);
   busca(/villa|casa grande|piscina/, ['villa-grupo']);
+  // LO QUE PIDE LA FRASE manda sobre el perfil: si escribe "remoto" o "deporte", pesa de verdad.
+  const carD = (d.caracter ?? []).map(norm);
+  const ambD0 = ambitosDeDestino(d);
+  // El ámbito pedido cuenta tanto si lo tienen los ELEMENTOS verificados como si define el CARÁCTER
+  // del destino (un sitio de fiesta con despensa flaca sigue siendo un sitio de fiesta).
+  const pedidosPrimero = [];
+  for (const a of viaje?.ambitos_pedidos ?? []) {
+    const como = cumpleAmbito(d, a);
+    if (como) { s += como === 'elemento' ? 2 : 1.5; pedidosPrimero.push(`Lo que pediste, ${norm(B.tax.ambitos[a] ?? a)}: aquí lo hay`); }
+    else s -= 0.75;
+  }
+  if (viaje?.remoto) {
+    if (carD.includes('remoto')) { s += 3; pedidosPrimero.push('Remoto de verdad: no es una ciudad con parque'); }
+    else if (carD.includes('por-descubrir') || carD.includes('naturaleza')) s += 1;
+    if (d.masificacion?.nivel_general === 'bajo') { s += 1.5; pedidosPrimero.push('Sin masificación: aquí no te cruzas con nadie'); }
+    if ((d.notoriedad ?? 'media') === 'alta') s -= 1;
+  }
+  if (viaje?.deporte) {
+    const rutasD = verif(d.rutas);
+    const dura = rutasD.find((r) => r.dificultad === 'exigente' || (r.distancia_km ?? 0) >= 15);
+    if (dura) { s += 2; pedidosPrimero.push(`Para moverte: ${dura.nombre} (${dura.distancia_km} km, ${dura.dificultad})`); }
+    else if (rutasD.length) s += 0.75;
+    else s -= 1.5;
+    if (carD.some((x) => ['montana','montaña','aventura','surf','naturaleza'].includes(x))) s += 1;
+  }
+  raz.unshift(...pedidosPrimero.slice(0, 2));
   const ambP = ambitosDeInteres(pf), ambD = ambitosDeDestino(d);
   let ba = 0;
   for (const a of AMB_NUEVOS) if (ambP.has(a) && ambD.has(a)) { ba += 1; if (ba <= 2) raz.push(`Tu rollo, ${norm(B.tax.ambitos[a])}: lo hay aquí de verdad`); }
@@ -573,8 +675,9 @@ function calcularBolsas(pf, viaje) {
   const cands = [];
   for (const d of DESTINOS) {
     if (filtrosDuros(pf, viaje, d).length) continue;
+    if (!sirveParaLoPedido(d, viaje)) continue;   // nada de rellenar con lo que no encaja en la petición
     const hist = enHistorial(pf, d);
-    const e = encaje(pf, d, mes);
+    const e = encaje(pf, d, mes, viaje);
     if (e.s <= -100) continue;
     const horas = d.acceso_desde_espana?.horas_puerta_a_puerta ?? {};
     const ciudad = norm(pf.ciudad_origen ?? '');
@@ -742,32 +845,6 @@ function construirDias(pf, viaje, d, carta, mods, nDias) {
   return { dias, cubiertos: [...vistos.keys()], mesas: Math.min(rj, rests.length) };
 }
 
-/* ============ PARSER CON IA (Claude vía proxy) ============
-   La gente escribe como habla, no con las palabras que tenemos fichadas. Si CONFIG.ia
-   está puesto, la frase va a Claude (mismo prompt que el laboratorio) y entiende matices
-   que ninguna regex pilla. Si no hay proxy, si tarda, o si falla: se usa parsearFrase()
-   de siempre. La app NUNCA se queda colgada ni se rompe por esto. */
-async function parsearFraseIA(frase) {
-  const respaldo = parsearFrase(frase);
-  if (!CONFIG.ia || !frase) return respaldo;
-  try {
-    const corte = AbortSignal.timeout ? AbortSignal.timeout(CONFIG.iaMs) : undefined;
-    const r = await fetch(CONFIG.ia, {
-      method: 'POST',
-      headers: { 'content-type': 'text/plain;charset=utf-8' }, // text/plain: evita el preflight CORS que Apps Script no atiende
-      body: JSON.stringify({ frase }),
-      signal: corte,
-    });
-    if (!r.ok) return respaldo;
-    const v = await r.json();
-    if (!v || v.error) return respaldo;
-    // La IA rellena lo que entienda; lo que no diga, se queda con lo del parser determinista.
-    return { ...respaldo, ...Object.fromEntries(Object.entries(v).filter(([, x]) => x !== null && x !== undefined)), _fuente: 'parser-ia' };
-  } catch {
-    return respaldo;
-  }
-}
-
 /* ============ PARSER-LITE (gemelo de motor/parsear.mjs) ============ */
 function parsearFrase(frase) {
   const t = norm(frase);
@@ -798,10 +875,22 @@ function parsearFrase(frase) {
   else if (/en espana|por espana|dentro de espana|sin salir de espana|nacional|peninsula/.test(t)) ambito = 'espana';
   if (ambito === 'extranjero') restr.push('fuera de España');
   if (ambito === 'espana') restr.push('dentro de España');
+  // QUÉ QUIERE HACER: hasta ahora la frase solo aportaba fechas y compañía, así que pedir
+  // "un sitio remoto donde hacer deporte" no movía el feed (fallo real, 4-ago). Ahora se leen
+  // los ÁMBITOS con la misma tabla de la taxonomía que se usa para el perfil, más dos conceptos
+  // que el catálogo sí sabe distinguir: 'remoto' (caracter/masificación) y deporte.
+  const ambitos = new Set();
+  for (const [re, as] of Object.entries(B.tax.interes)) { if (re[0] === '_') continue;
+    if (new RegExp(re).test(t)) for (const a of as) ambitos.add(a); }
+  const remoto = /remoto|aislad|apartad|perdid|sin gente|sin masific|sin turist|desconect|lejos de todo|fin del mundo|nada de ciudad|naturaleza salvaje|en medio de la nada/.test(t);
+  const deporte = /deporte|entrenar|correr|trail|bici|btt|escalad|surf|kayak|buce|montan|montañ|senderis|caminar|andar|ferrata|esqu/.test(t);
+  if (remoto) { ambitos.add('naturaleza'); restr.push('sitio remoto, nada de ciudad'); }
+  if (deporte) { ambitos.add('deporte_aventura'); restr.push('poder hacer deporte'); }
   let destinoDirecto = null;
   for (const d of DESTINOS) { const nD = norm(d.nombre.split(' (')[0]);
     if (nD.length > 3 && t.includes(nD)) { destinoDirecto = d.id; break; } }
-  return { frase, duracion_dias: dur, mes, compania: comp, restricciones_viaje: restr, ambito_geografico: ambito, destinoDirecto };
+  return { frase, duracion_dias: dur, mes, compania: comp, restricciones_viaje: restr, ambito_geografico: ambito,
+           ambitos_pedidos: [...ambitos], remoto, deporte, destinoDirecto };
 }
 
 /* ============ ENTREVISTA ADAPTATIVA ============ */
@@ -1003,6 +1092,7 @@ function vistaEntrevista() {
 /* ============ VISTA: INICIO (barra de texto) ============ */
 function vistaInicio() {
   const pf = estado.perfil;
+  const eb = edadBuild();
   $('#app').innerHTML = `<div class="vista">
     <p class="saludo">Hola, <em>${esc(pf.nombre)}</em></p>
     <p class="sub">Cuéntame el viaje que tienes en la cabeza — aunque solo sea una idea a medias.</p>
@@ -1015,18 +1105,16 @@ function vistaInicio() {
     </div>
     <button class="enlace-manual" id="manual">📍 Ya tengo destino — organízamelo</button>
     ${yaInstalada ? '' : '<button class="enlace-instalar" id="instalar"><span>⬇️</span> Descargar la app · Android e iPhone</button>'}
-    <p class="pie">Un valor seguro + sorpresas de verdad. Todo verificado con fuentes.<br>Y seguimos verificando destinos nuevos cada semana.</p>
+    <div class="sello-build ${eb.dias >= 3 ? 'viejo' : ''}">
+      <span class="marca">${svgLogo(VAR_HOY, 26, true)}</span>
+      <span><b>${esc(VAR_HOY.nombre)}</b> · el logo cambia con cada actualización<br>
+      <small>${DESTINOS.length} destinos · catálogo del ${eb.fecha} — ${eb.texto}</small></span>
+    </div>
+    <p class="pie">Un valor seguro + sorpresas de verdad. Todo verificado con fuentes.</p>
   </div>`;
-  let pensando = false;
-  const lanza = async (f) => {
-    if (pensando) return;                     // evita dobles envíos mientras piensa la IA
-    pensando = true;
-    const btn = $('#manda'); const antes = btn ? btn.textContent : null;
-    if (btn && CONFIG.ia) { btn.textContent = 'Pensando…'; btn.disabled = true; }
-    let v;
-    try { v = await parsearFraseIA(f || 'Sorpréndeme'); }
-    finally { pensando = false; if (btn && antes !== null) { btn.textContent = antes; btn.disabled = false; } }
-    evento('busqueda', { f: (f || 'sorpréndeme').slice(0, 90), mes: v.mes, comp: v.compania, ia: v._fuente === 'parser-ia' });
+  const lanza = (f) => {
+    const v = parsearFrase(f || 'Sorpréndeme');
+    evento('busqueda', { f: (f || 'sorpréndeme').slice(0, 90), mes: v.mes, comp: v.compania });
     estado.viaje = v;
     if (v.destinoDirecto) { estado.destino = v.destinoDirecto; ir('destino'); return; }
     estado.bolsas = calcularBolsas(estado.perfil, v);
@@ -1222,6 +1310,7 @@ function pinta() {
   ({ entrevista: vistaEntrevista, inicio: vistaInicio, feed: vistaFeed, destino: vistaDestino, plan: vistaPlan, manual: vistaManual })[estado.vista]();
   document.querySelectorAll(".tarjeta").forEach((el, i) => setTimeout(() => el.classList.add("visible"), 80 + i * 110));
 }
+aplicarLogoDelDia();   // logo, favicon y color de barra según el build (decisión #31)
 pinta();
 </script>
 </body>

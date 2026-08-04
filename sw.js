@@ -1,6 +1,6 @@
 /* Service worker mínimo de Brújula — habilita "instalar app" (PWA) y un arranque offline básico.
    Cachea el caparazón estático; los datos en vivo (fotos de Wikipedia, etc.) van siempre a la red. */
-const CACHE = 'brujula-v2';   // subir versión al cambiar el aspecto: invalida el cacheado (azul, jul-2026)
+const CACHE = 'brujula-2026-08-04';   // subir versión al cambiar el aspecto: invalida el cacheado (azul, jul-2026)
 const SHELL = ['./', './index.html', './datos.js', './icono.svg', './manifest.webmanifest'];
 
 self.addEventListener('install', (e) => {
